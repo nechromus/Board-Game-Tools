@@ -1,9 +1,9 @@
-// Offline cache for the GitHub Pages build. The build replaces 10a293bbad, so every release gets a fresh cache.
-const CACHE = 'twow-campaign-10a293bbad';
+// Offline cache for the GitHub Pages build. The build replaces 7685c57ff7, so every release gets a fresh cache.
+const CACHE = 'twow-campaign-7685c57ff7';
 const CORE = ['./', 'index.html', 'manifest.webmanifest', 'apple-touch-icon.png', 'icon-192.png', 'icon-512.png'];
 
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(CORE)).then(() => self.skipWaiting()));
+  e.waitUntil(caches.open(CACHE).then(c => c.addAll(CORE.map(u => new Request(u, { cache: 'reload' })))).then(() => self.skipWaiting()));
 });
 self.addEventListener('activate', e => {
   e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k.startsWith('twow-campaign-') && k !== CACHE).map(k => caches.delete(k))))
@@ -23,7 +23,8 @@ self.addEventListener('fetch', e => {
   if (req.mode === 'navigate') {
     e.respondWith((async () => {
       const c = await caches.open(CACHE);
-      const net = fetch(req).then(r => { if (r.ok) c.put('index.html', r.clone()); return r; });
+      // GitHub Pages lets browsers keep the page for 10 minutes: ask the server every time (cache: no-cache)
+      const net = fetch(req.url, { cache: 'no-cache', credentials: 'same-origin' }).then(r => { if (r.ok) c.put('index.html', r.clone()); return r; });
       const slow = new Promise(res => setTimeout(res, 4000));
       try {
         const r = await Promise.race([net, slow.then(() => null)]);
