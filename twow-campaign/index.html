@@ -482,6 +482,14 @@ button.tver{border:none;background:none;padding:6px 0 0;font:inherit;font-size:1
 .qbox2 table{background:var(--page)}
 .qref .qrule .qlink.core{color:var(--accent)}
 
+/* read-aloud text: its own sheet of parchment, a red initial, an ornament before the table instructions */
+.readaloud{margin:14px 4px 4px 4px;padding:16px 20px 8px;background:#F4EAD3;border:1px solid var(--line);outline:1px solid var(--line);outline-offset:3px;border-radius:2px;box-shadow:inset 0 0 22px rgba(120,88,48,.14)}
+.readaloud .read{color:#20140A;line-height:1.32;margin:0 0 .55em}
+.readaloud .read:last-child{margin-bottom:.35em}
+.readaloud.cap .read:first-child::first-letter{float:left;font-family:var(--display);font-weight:900;font-style:normal;color:var(--accent);font-size:3.05em;line-height:.8;margin:.07em .1em 0 0}
+.orn{text-align:center;color:var(--accent);font-size:22px;line-height:1;margin:10px 0 0;opacity:.75}
+.orn:last-child{display:none}
+
 </style>
 </head>
 <body>
@@ -1713,11 +1721,26 @@ function paras(text, cls = 'read') {
   for (const b of blocks) {
     const lines = b.split('\n').map(l => l.trim()).filter(Boolean);
     if (!lines.length) continue;
-    const wrapped = lines.length > 1 && lines.slice(0, -1).every(l => l.length >= 40 && l.length <= 95);
-    if (wrapped) out.push(lines.join(' '));
-    else out.push(...lines);
+    // Two ways of writing a paragraph block: one paragraph per line (long lines) or text wrapped at a fixed width.
+    // Wrapped text joins up; it breaks only after a sentence that ends early or before a new quotation.
+    const width = Math.max(...lines.slice(0, -1).map(l => l.length), 0);
+    let cur = lines[0];
+    for (const l of lines.slice(1)) {
+      const prevLine = lines[lines.indexOf(l) - 1];
+      const ends = /[.!?…"”’)]$/.test(prevLine);
+      const hard = width > 110 || (ends && (prevLine.length < 0.8 * width || /^["“‘']/.test(l)));
+      if (hard) { out.push(cur); cur = l; } else cur += ' ' + l;
+    }
+    out.push(cur);
   }
   return out.map(p => `<p class="${cls}">${esc(p)}</p>`).join('');
+}
+
+/** Text to read aloud to the table (entries, results): its own parchment panel, a red initial for a story entry,
+ *  and an ornament that separates it from what the table does next. */
+function readAloud(text, { cap = true, cls = 'read' } = {}) {
+  const inner = paras(text, cls);
+  return inner ? `<div class="readaloud${cap ? ' cap' : ''}">${inner}</div><div class="orn" aria-hidden="true">❧</div>` : '';
 }
 
 /** A table line. The build marks lines that name Gold without saying who gets it (decided on the English line, so
@@ -1995,7 +2018,7 @@ function readingScreen(eng, ui, mapUrl) {
   const where = eng.LOC[v.loc]?.name || v.loc;
   if (v.surprise) body += `<div class="note-surprise">${th('reading.surprise_note', { choice: choiceName(v.choice), loc: where })}</div>`;
   else if (v.takeover) body += `<div class="note-takeover">${th('reading.takeover_note', { choice: choiceName(v.choice), loc: where })}</div>`;
-  body += paras(e.text);
+  body += readAloud(e.text);
   if (v.fromFight && v.half) body += `<div class="box"><div class="label">${esc(t('reading.driven_away'))}</div>${esc(t('reading.driven_away_text'))}</div>`;
   const table = asList(e.table);
   let actions = '';
@@ -2025,7 +2048,7 @@ function resultScreen(eng, ui, mapUrl, v) {
   let body = `<h1 class="h1">${esc(v.title)}</h1><div class="rule"></div>`;
   if (v.option) body += `<div class="chosen">${esc(t('result.chose'))} <i>${esc(v.option)}${v.branch ? ` (${esc(v.branch === 'won' || v.branch === 'lost' ? t('dialog.' + v.branch) : v.branch.replace('-', '–'))})` : ''}</i></div>`;
   if (fromFight) body += `<div class="chosen">${v.outcome ? esc(t('result.outcome.' + v.outcome)) : ''}${v.half ? ' ' + esc(t('result.half')) : ''}</div>`;
-  body += paras(v.result, 'read result');
+  body += readAloud(v.result, { cap: false, cls: 'read result' });
   if (v.table?.length) body += `<div class="label">${esc(t('label.on_table'))}</div>${readTicks(ui, 'r:' + eng.S.step, v.table)}`;
   if (v.changes?.length) body += `<div class="label">${esc(t('label.app_records'))}</div>${records(v.changes)}`;
   for (const n of v.notes || []) if (n.type === 'group_fight_later') body += `<div class="box"><div class="label">${esc(t('result.group_later'))}</div>${esc(t('result.group_later_text', { name: n.name }))}</div>`;
