@@ -12,7 +12,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="icon-192.png">
 <link rel="manifest" href="manifest.webmanifest">
-<meta name="twow-build" content="75b8e50cfd">
+<meta name="twow-build" content="e64375ab79">
 
 <!--FONTS--><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;800;900&amp;family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&amp;family=Barlow+Semi+Condensed:ital,wght@0,500;0,600;0,700;1,500;1,600&amp;display=swap"><!--/FONTS-->
 <style>
@@ -523,7 +523,7 @@ button.tver{border:none;background:none;padding:6px 0 0;font:inherit;font-size:1
 /* ---------- fight screens: enemy, scene, App fight vs card fight (request fight-screens.md) ---------- */
 .foe .enemy{margin:6px 0 10px;font-family:var(--read);font-style:italic;font-size:18px;line-height:1.35;color:var(--ink)}
 .foe details.enemy{margin:6px 0 10px;font-style:normal}
-.foe details.enemy summary{cursor:pointer;font-family:var(--display);font-weight:800;font-size:13px;letter-spacing:1.5px;text-transform:uppercase;color:var(--accent);min-height:32px;display:flex;align-items:center}
+.foe details.enemy summary{list-style:none;gap:8px;cursor:pointer;font-family:var(--display);font-weight:800;font-size:13px;letter-spacing:1.5px;text-transform:uppercase;color:var(--accent);min-height:32px;display:flex;align-items:center}
 .foe details.enemy p{margin:4px 0 0;font-style:italic;font-size:17px}
 .fight-r .scene{margin:0 0 12px;padding-left:12px;border-left:3px solid var(--rule-l);font-family:var(--read);font-style:italic;font-size:17px;line-height:1.4;color:var(--muted)}
 .fight-r .appfight{margin:0 0 10px;font-size:15px;font-weight:600;color:var(--muted)}
@@ -543,6 +543,10 @@ button.tver{border:none;background:none;padding:6px 0 0;font:inherit;font-size:1
 .navbtn.goalnav small svg{width:13px;height:13px}
 .act-l .actgoal{align-self:stretch;margin-top:14px;padding:10px 16px 12px;border:2px solid var(--accent);border-radius:4px;background:var(--page-d);position:relative;z-index:1}
 .act-l .actgoal .kicker{margin:0 0 4px}
+.foe details.enemy summary::-webkit-details-marker{display:none}
+.foe details.enemy summary::before{content:"▸";font-size:14px}
+.foe details.enemy[open] summary::before{transform:rotate(90deg)}
+.foe details.enemy p{font-family:var(--read);line-height:1.35;color:var(--ink)}
 
 </style>
 </head>
@@ -2442,7 +2446,7 @@ function foePage(eng, f, mapUrl) {
   // the enemy: in full before the fight, a collapsible line once it runs (request fight-screens.md)
   const running = f.stage !== 'participants' && f.started;
   const enemy = !f.enemy ? '' : running
-    ? `<details class="enemy"><summary>${esc(t('fight.enemy'))}</summary><p>${esc(f.enemy)}</p></details>`
+    ? `<details class="enemy" open><summary>${esc(t('fight.enemy'))}</summary><p>${esc(f.enemy)}</p></details>`
     : `<p class="enemy">${esc(f.enemy)}</p>`;
   return `<section class="page-l fight-l" aria-label="${esc(t('fight.foe_aria'))}">
     ${f.loc ? vignetteSVG(eng, mapUrl, f.loc, { label: t('map.aria_of', { name: where }), w: 760, h: 330 }) : ''}
