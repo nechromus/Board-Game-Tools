@@ -12,7 +12,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="icon-192.png">
 <link rel="manifest" href="manifest.webmanifest">
-<meta name="twow-build" content="b4d12ce7bd">
+<meta name="twow-build" content="7096d4639a">
 
 <!--FONTS--><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;800;900&amp;family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&amp;family=Barlow+Semi+Condensed:ital,wght@0,500;0,600;0,700;1,500;1,600&amp;display=swap"><!--/FONTS-->
 <style>
@@ -552,6 +552,13 @@ button.tver{border:none;background:none;padding:6px 0 0;font:inherit;font-size:1
 .box.announce{border-left:4px solid var(--accent)}
 .jpending{top:auto;bottom:20px}
 .fight-r .gatherline{margin:0 0 10px;font-size:16px}
+
+/* read-aloud panel on fight scenes, beats and the epilogue (iPad finding 2026-10-09) */
+.readaloud.small{margin:6px 2px 4px;padding:10px 14px 2px;outline-offset:2px}
+.fight-r .beat{border:none;background:none;padding:0;margin:14px 0 0}
+.fight-r .beat .label{margin:0 0 4px}
+.fight-r .beat .eff{margin:8px 2px 0}
+.fight-r .readaloud{margin-top:2px}
 
 </style>
 </head>
@@ -2040,9 +2047,9 @@ function paras(text, cls = 'read') {
 
 /** Text to read aloud to the table (entries, results): its own parchment panel, a red initial for a story entry,
  *  and an ornament that separates it from what the table does next. */
-function readAloud(text, { cap = true, cls = 'read' } = {}) {
+function readAloud(text, { cap = true, cls = 'read', orn = true, small = false } = {}) {
   const inner = paras(text, cls);
-  return inner ? `<div class="readaloud${cap ? ' cap' : ''}">${inner}</div><div class="orn" aria-hidden="true">❧</div>` : '';
+  return inner ? `<div class="readaloud${cap ? ' cap' : ''}${small ? ' small' : ''}">${inner}</div>${orn ? '<div class="orn" aria-hidden="true">❧</div>' : ''}` : '';
 }
 
 /** A table line. The build marks lines that name Gold without saying who gets it (decided on the English line, so
@@ -2553,7 +2560,7 @@ function kindBox(f) {
 
 /** The scene: the fight's own text, otherwise the start of the entry that led here (two sentences at most). */
 function sceneText(f) {
-  if (f.text) return paras(f.text);
+  if (f.text) return readAloud(f.text);
   if (!f.scene) return '';
   const flat = String(f.scene).replace(/\s+/g, ' ').trim();
   const parts = flat.match(/[^.!?]+[.!?]+["'”’]?(\s|$)/g) || [flat];
@@ -2608,7 +2615,7 @@ function fightStep(eng, ui, f) {
       <div class="status">${esc(t('fight.cards_in_pool', { n: f.pool }))}</div></div></div>
       ${f.newPool ? `<p class="ruleline">${esc(t('fight.new_pool_text'))}</p>` : ''}
       <button class="btn red" data-act="pool">${esc(t('fight.btn_empty'))}</button>`;
-    if (f.beat) body += `<div class="beat" role="status"><div class="label">${esc(t('fight.read_aloud'))}</div>${paras(f.beat.text, 'read result')}<div class="eff">${esc(t('fight.effect', { text: f.beat.effect }))}</div></div>`;
+    if (f.beat) body += `<div class="beat" role="status"><div class="label">${esc(t('fight.read_aloud'))}</div>${readAloud(f.beat.text, { cap: false, cls: 'read result', orn: false, small: true })}${f.beat.effect ? `<div class="eff">${esc(t('fight.effect', { text: f.beat.effect }))}</div>` : ''}</div>`;
   }
   const rhythm = f.roundText || (f.rounds ? t('fight.rhythm.limit', { n: f.rounds, fled: t('fight.out.fled') })
     : t(f.group && f.participants > 1 ? 'fight.rhythm.group' : 'fight.rhythm.solo'));
@@ -2754,7 +2761,7 @@ function halves(beats) {
   for (let i = 0; i < beats.length; i++) { acc += beats[i].text.length + 60; if (acc >= total / 2) { cut = i + 1; break; } }
   return [beats.slice(0, cut), beats.slice(cut)];
 }
-const beatHTML = list => list.map(b => `<div class="ebeat"><div class="ebt">${esc(b.title)}</div>${paras(b.text, 'read ebr')}</div>`).join('');
+const beatHTML = list => list.map(b => `<div class="ebeat"><div class="ebt">${esc(b.title)}</div>${readAloud(b.text, { cap: false, cls: 'read ebr', orn: false, small: true })}</div>`).join('');
 
 function epilogueScreen(eng, ui, mapUrl, found) {
   const ep = eng.epilogue(), C = eng.C;
@@ -2779,7 +2786,7 @@ function epilogueScreen(eng, ui, mapUrl, found) {
   const seen = ep.endings.filter(x => found.includes(x.id) || x.id === ep.ending?.id);
   const left = `<section class="page-l jpage" aria-label="${esc(t('ending.your'))}">
     <div class="kicker">${esc(t('ending.your'))}</div><h2 class="jtitle" style="font-size:30px;margin-top:4px">${esc(C.title)}</h2><div class="rule"></div>
-    <div class="jscroll">${paras(ep.summary, 'read jrecap')}
+    <div class="jscroll">${readAloud(ep.summary, { cls: 'read jrecap' })}
       ${tiles.length ? `<div class="tiles">${tiles.map(([n, l]) => `<div><b>${n}</b><span>${esc(l)}</span></div>`).join('')}</div>` : ''}
       <div class="label">${esc(t('ending.found', { n: seen.length, total: ep.endings.length }))}</div>
       <ul class="efound">${ep.endings.map(x => seen.includes(x) ? `<li class="on">${esc(x.title)}</li>` : `<li>${esc(t('ending.not_found'))}</li>`).join('')}</ul>
@@ -2787,7 +2794,7 @@ function epilogueScreen(eng, ui, mapUrl, found) {
   const right = `<section class="page-r jpage" aria-label="${esc(t('epilogue.next'))}">
     <div class="kicker">${esc(t('epilogue.next'))}</div>
     ${vignetteSVG(eng, mapUrl, eng.S.place, { mood: 'muted', w: 900, h: 420, label: t('epilogue.next') })}
-    <div class="jscroll">${paras(ep.hook, 'read jrecap')}
+    <div class="jscroll">${readAloud(ep.hook, { cap: false, cls: 'read jrecap', orn: false })}
       ${ep.carryOver ? `<div class="qbox"><div class="qt">${esc(t('epilogue.carry'))}</div><div>${esc(ep.carryOver)}</div></div>` : ''}</div>
     <div class="actions"><button class="btn" data-act="title">${esc(t('btn.back_title'))}</button>
       ${eng.isPlaytest?.() ? `<button class="btn line" data-act="ptexport" data-c="${esc(eng.C.id)}">${esc(t('pt.export'))}</button>` : ''}
