@@ -12,7 +12,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="icon-192.png">
 <link rel="manifest" href="manifest.webmanifest">
-<meta name="twow-build" content="0b4d39847a">
+<meta name="twow-build" content="ff2ce7096b">
 
 <!--FONTS--><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;800;900&amp;family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&amp;family=Barlow+Semi+Condensed:ital,wght@0,500;0,600;0,700;1,500;1,600&amp;display=swap"><!--/FONTS-->
 <style>
@@ -789,6 +789,14 @@ details.xp.cardx>summary .tx{font-size:16px}
 .trailq{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 6px;font-size:16px;line-height:1.25}
 .seg.small button{min-width:56px;min-height:40px;font-size:15px}
 .deckhelp .dwarn{margin:7px 0 1px 0;vertical-align:0}/* TW-102: the tag on its own line under the heading, aligned with it */
+/* TW-103: map animations – short, calm, none with reduced motion */
+.mapfx .fxring{fill:none;stroke:#F6E7B0;stroke-width:5;opacity:0;transform-box:fill-box;transform-origin:center;animation:fxblink 2.4s ease-in-out both}
+@keyframes fxblink{0%{opacity:0;transform:scale(.7)}15%{opacity:1;transform:scale(1.15)}32%{opacity:.2;transform:scale(1)}50%{opacity:1;transform:scale(1.15)}68%{opacity:.2;transform:scale(1)}82%{opacity:.9;transform:scale(1.1)}100%{opacity:0;transform:scale(1.25)}}
+.mapfx .qtghost{transform-box:fill-box;transform-origin:center;animation:qtpulse 1.3s ease-in-out 3}
+@keyframes qtpulse{50%{transform:scale(1.18);opacity:.75}}
+.mapfx .qtghost.gone{animation:qtgone .8s ease-in both}
+@keyframes qtgone{0%{opacity:1;transform:scale(1)}30%{opacity:1;transform:scale(1.2)}100%{opacity:0;transform:translateY(-26px) scale(.3)}}
+@media (prefers-reduced-motion:reduce){.mapfx .fxring{animation:none;opacity:0}.mapfx .qtghost{animation:none}.mapfx .qtghost.gone{display:none}}
 
 </style>
 </head>
@@ -1529,11 +1537,16 @@ class Engine {
    */
   setQuestTokens(on) { this.S.quest_tokens = !!on; this.S.qt_marked = on ? (this.S.qt_marked || []) : []; }
   questTokenLocs() { return [...new Set(this.allOpenLeads().filter(id => leadKind(this.E[id]) === 'lead').map(id => this.E[id].at).filter(Boolean))]; }   // TW-105: real leads only, never rumours
-  questTokenChanges() {
+  /** Location ids where a Quest token must be placed or removed since the group last tapped Done (null: nothing). */
+  questTokenDiff() {
     if (!this.S.quest_tokens || !this.hasRounds()) return null;
     const now = this.questTokenLocs(), was = this.S.qt_marked || [];
     const place = now.filter(l => !was.includes(l)), remove = was.filter(l => !now.includes(l));
-    return place.length || remove.length ? { place: place.map(l => this.locName(l)), remove: remove.map(l => this.locName(l)) } : null;
+    return place.length || remove.length ? { place, remove } : null;
+  }
+  questTokenChanges() {
+    const d = this.questTokenDiff();
+    return d && { place: d.place.map(l => this.locName(l)), remove: d.remove.map(l => this.locName(l)) };
   }
   markQuestTokens() { this.snap(); this.S.qt_marked = this.questTokenLocs(); }
   tickStanding(id) { this.snap(); const x = (this.S.standing || []).find(y => y.id === id); if (x) x.done = !x.done; }
@@ -2761,13 +2774,53 @@ function vignetteSVG(eng, mapUrl, locId, { mood = '', label = '', w = 620, h = 8
     </svg></div>`;
 }
 
+/**
+ * Map animations (TW-103), short and calm: a new lead or rumour marker blinks when the map comes back; after Done on
+ * the Quest-token note the placed Locations blink too, and a token to remove pulses until Done, then fades away.
+ * Re-draws keep the running animation in step (negative animation-delay). Reduced motion: no animation (app.css).
+ */
+const BLINK_MS = 2400, GONE_MS = 800;
+const sealAt = L => ({ x: L.map.x + (L.map.banner_dx || 0) + 17.5 + 7.5 * L.name.length + 6, y: L.map.y + 28 });
+function mapFx(eng, ui, info, covered = false) {
+  const now = Date.now(), LOC = eng.LOC;
+  const ids = threadIds(info);
+  if (!ui.mapSeen) ui.mapSeen = new Set(ids);
+  if (!covered) {                                  // while the end-of-Turn card covers the map, new markers wait for OK
+    const fresh = [...new Set(ids.filter(x => !ui.mapSeen.has(x)).map(x => x.split('@')[1]))];
+    ui.mapSeen = new Set(ids);
+    if (fresh.length) fxBlink(ui, fresh);
+  }
+  let out = '';
+  const b = ui.fxBlink;
+  if (b && now - b.t0 < BLINK_MS) out += b.locs.filter(l => LOC[l]).map(l => { const p = sealAt(LOC[l]);
+    return `<circle class="fxring" cx="${p.x}" cy="${p.y}" r="24" style="animation-delay:-${now - b.t0}ms"/>`; }).join('');
+  const qt = eng.questTokenDiff();
+  // the token sits where the lead seal was; beside it when a rumour seal is still there
+  const tokAt = l => { const p = sealAt(LOC[l]); return info[l]?.leads?.length ? { x: p.x + 34, y: p.y } : p; };
+  for (const l of qt?.remove || []) if (LOC[l]) { const p = tokAt(l); out += `<g transform="translate(${p.x} ${p.y})"><g class="qtghost">${QT_TOKEN}</g></g>`; }
+  const g = ui.fxGone;
+  if (g && now - g.t0 < GONE_MS) for (const l of g.locs) if (LOC[l]) { const p = tokAt(l);
+    out += `<g transform="translate(${p.x} ${p.y})"><g class="qtghost gone" style="animation-delay:-${now - g.t0}ms">${QT_TOKEN}</g></g>`; }
+  return out ? `<g class="mapfx" pointer-events="none" aria-hidden="true">${out}</g>` : '';
+}
+/** A Quest token on the map: the brass disc that is to come off the board. */
+const QT_TOKEN = '<circle r="15" fill="#C9A24A" stroke="#5B4214" stroke-width="2.2"/><circle r="9" fill="none" stroke="#F3E3A8" stroke-width="1.4" stroke-dasharray="3 2.5"/><path d="M-5 -5 L5 5 M5 -5 L-5 5" stroke="#5B4214" stroke-width="2.4" stroke-linecap="round"/>';
+/** Lead and rumour markers on the map, as id@Location. */
+const threadIds = info => Object.entries(info).flatMap(([loc, i]) => (i.leads || []).map(l => l.id + '@' + loc));
+function fxBlink(ui, locs) {
+  const now = Date.now(), b = ui.fxBlink, keep = b && now - b.t0 < BLINK_MS ? b.locs : [];
+  ui.fxBlink = { locs: [...new Set([...keep, ...locs])], t0: now };
+}
+function fxGone(ui, locs) { if (locs.length) ui.fxGone = { locs, t0: Date.now() }; }
+
 function mapScreen(eng, ui, mapUrl) {
   const LOC = eng.LOC, info = eng.mapInfo(), v = eng.view();
   const overlay = v.kind === 'surprise' || v.kind === 'round_end';
   const sel = v.kind === 'explore' || v.kind === 'goahead' || v.kind === 'surprise' ? v.loc : overlay ? null : ui.panelLoc;
   const markers = Object.entries(LOC).sort((a, b) => (a[0] === sel) - (b[0] === sel)).map(([id, L]) => marker(id, L, info[id], id === sel)).join('');
   const st = eng.status();
-  const pend = mapNotes(eng, ui, st) + (v.kind === 'idle' ? nextBox(eng, ui) : '');
+  const nb = v.kind === 'idle' ? nextBox(eng, ui) : '';
+  const pend = mapNotes(eng, ui, st) + nb;
   return `<div class="map">
     <svg viewBox="0 0 1536 1024" preserveAspectRatio="xMidYMid meet" role="group" aria-label="${esc(t('map.main_aria'))}">
       <defs><filter id="lift" x="-20%" y="-30%" width="140%" height="180%"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-color="#1E140A" flood-opacity="0.55"/></filter>
@@ -2776,7 +2829,7 @@ function mapScreen(eng, ui, mapUrl) {
       <text x="250" y="330" text-anchor="middle" font-family="Cinzel, serif" font-weight="700" font-size="26" fill="#2E2014" opacity="0.6" style="letter-spacing:14px">${esc(t('map.sea'))}</text>
       ${COMPASS}${CARTOUCHE()}
       ${sel ? '<rect x="0" y="0" width="1536" height="1024" fill="url(#spot)" pointer-events="none"/>' : ''}
-      ${markers}
+      ${markers}${mapFx(eng, ui, info, !!nb || overlay)}
     </svg>
     ${topbar(eng, ui)}${pend}
     ${v.kind === 'surprise' ? surpriseCard(eng, v) : v.kind === 'round_end' ? roundEndCard(eng) : sel ? panel(eng, ui, sel, info[sel]) : ''}
@@ -4118,6 +4171,7 @@ function openCampaign(id) {
   eng = engineFor(id);
   if (saved?.state) { eng.load(saved.state); eng.history = saved.history || []; }
   eng.ptEnv = ptEnv();
+  ui.mapSeen = new Set(threadIds(eng.mapInfo())); ui.fxBlink = null; ui.fxGone = null;   // TW-103: leads open when the campaign opens are not new
   ui.campaign = id; ui.screen = eng.S.session?.ended ? 'session_start' : 'game'; ui.panelLoc = null; ui.dialog = null; ui.ticked = {};
   ls.set('twow-campaign:last', id);
 }
@@ -4326,7 +4380,7 @@ const ACTIONS = {
   setuppt: () => { ui.setupPT = !ui.setupPT; },
   setupqt: () => { ui.setupQT = !ui.setupQT; },
   qttoggle: () => { eng.setQuestTokens(!eng.S.quest_tokens); },
-  qtdone: () => { eng.markQuestTokens(); },
+  qtdone: () => { const d = eng.questTokenDiff(); eng.markQuestTokens(); if (d) { fxBlink(ui, d.place); fxGone(ui, d.remove); } },
   trailq: d => { const m = (ui.trailHeld ||= {}); m[d.k] = m[d.k] === d.v ? undefined : d.v; },
   rulesec: d => {                             // a tapped "Core Rules 10" (TW-037): that section of the Campaign Rules
     openRules(); ui.setupHide = null; ui.setupMode = null;
