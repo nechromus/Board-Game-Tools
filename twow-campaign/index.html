@@ -12,7 +12,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="icon-192.png">
 <link rel="manifest" href="manifest.webmanifest">
-<meta name="twow-build" content="f602d1cc68">
+<meta name="twow-build" content="91e5b26332">
 
 <!--FONTS--><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;800;900&amp;family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&amp;family=Barlow+Semi+Condensed:ital,wght@0,500;0,600;0,700;1,500;1,600&amp;display=swap"><!--/FONTS-->
 <style>
@@ -799,13 +799,27 @@ details.xp.cardx>summary .tx{font-size:16px}
 @media (prefers-reduced-motion:reduce){.mapfx .fxring{animation:none;opacity:0}.mapfx .qtghost{animation:none}.mapfx .qtghost.gone{display:none}}
 .sver-changes .sguide,.sver-guide .schanges{display:none}/* rev 1661: two versions of the setup */
 /* T4 (TW-129): the declaration chip sits in the Location panel's head; open, its box takes the full width below */
-.panel .head{flex-wrap:wrap}
+.panel .head{flex-wrap:nowrap}.panel .head:has(details.tutchip[open]){flex-wrap:wrap}.panel .head .who{min-width:0}
 .panel .head details.tutchip{margin:0 6px 0 auto}
 .panel .head details.tutchip>summary{min-height:32px;font-size:0;padding:3px;gap:0}
 .panel .head details.tutchip>summary::after{content:none}
 .panel .head details.tutchip>summary .q{width:26px;height:26px;font-size:15px}
 .panel .head details.tutchip[open]{flex-basis:100%;order:3;margin:6px 0 0}
 .act-l .tutorial,.sess-l .tutorial{text-align:left}
+/* TW-135: scroll cue – a soft fade and a small chevron at the edge while more content waits; gone at the end */
+.scue{position:sticky;height:0;flex:none;z-index:4;pointer-events:none;opacity:0;transition:opacity .2s}
+.scue.up{top:0}.scue.down{bottom:0}
+.scue::before{content:"";position:absolute;left:0;right:0;height:34px;background:linear-gradient(to bottom,var(--cue-bg,var(--page)),transparent)}
+.scue.up::before{top:0}
+.scue.down::before{bottom:0;background:linear-gradient(to top,var(--cue-bg,var(--page)),transparent)}
+.scue::after{content:"";position:absolute;left:50%;width:26px;height:26px;margin-left:-13px;border-radius:50%;border:1.5px solid var(--water);background:var(--cue-bg,var(--page)) no-repeat center/12px url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' fill='none' stroke='%234E6B78' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");box-shadow:0 1px 4px rgba(40,25,10,.18)}
+.scue.up::after{top:4px;transform:rotate(180deg)}
+.scue.down::after{bottom:4px}
+.cue-up>.scue.up,.cue-down>.scue.down{opacity:.95}
+.page-l .scue,.readl .lbody>.scue{--cue-bg:var(--page-l)}
+.mncol>.scue{--cue-bg:var(--page)}
+@media (prefers-reduced-motion:reduce){.scue{transition:none}}
+details.xp.deckhelp .undolink{min-height:32px}details.xp.deckhelp>.xpb{padding-bottom:4px}details.xp.deckhelp .deckol{margin:0 0 2px}details.xp.deckhelp .deckol li{margin:2px 0}/* TW-124: the open deck help fits the Skirmish setup */
 
 </style>
 </head>
@@ -2541,9 +2555,9 @@ const TEACH = {
   declare: { a: 'the-phase-ii-declaration' },
   after: { a: 'clean-up-after-every-fight' },
   group_called: { a: 'a-group-fight-is-a-scene' },
-  group_start: { a: 'interwoven-fight-rounds', supersedes: 'Group fights' },
+  group_start: { a: 'interwoven-fight-rounds', supersedes: 'Group fights', supersedesA: 'pools-by-players' },
   contract: { a: 'contracts' },
-  rest: { a: 'rest', supersedes: 'Rest and Meditate' },
+  rest: { a: 'rest', supersedes: 'Rest and Meditate', supersedesA: 'rest' },
   act: { a: 'start-of-an-act' },
   equipment: { a: 'equipment-wear' },
   duel: { a: 'duels-against-npc-rivals' },
@@ -2551,9 +2565,9 @@ const TEACH = {
 };
 /** T10: a table line that hands out Equipment (not its wear or repair). */
 const givesEquipment = lines => (lines || []).some(x => typeof x === 'string' && /\bEquipment\b/.test(x) && !/Durability|Damaged|repair/i.test(x));
-const teachBox = (eng, id, where) => ({ title: t('teach.' + id + '.title'), text: t('teach.' + id), manual: TEACH[id].a, supersedes: TEACH[id].supersedes, first: eng ? eng.teach(id, where) : true });
+const teachBox = (eng, id, where) => ({ title: t('teach.' + id + '.title'), text: t('teach.' + id), manual: TEACH[id].a, supersedes: TEACH[id].supersedes, supersedesA: TEACH[id].supersedesA, first: eng ? eng.teach(id, where) : true });
 /** A campaign's boxes plus the App's; a campaign box the App's box replaces is left out. */
-const withTeach = (camp, app) => [...app, ...camp.filter(tb => !app.some(a => a.supersedes === tb.title))];
+const withTeach = (camp, app) => [...app, ...camp.filter(tb => !app.some(a => a.supersedes === tb.title || (a.supersedesA && tb.manual === a.supersedesA)))];   // by anchor too: a translated title differs
 
 // module names and token ids as shown to players (title, setup, campaign pages)
 const moduleName = m => tOr('module.' + m, m);
@@ -4300,6 +4314,31 @@ function render() {
   if (kept) restoreScrolls(root, kept);
   else { const body = root.querySelector('.page-r .body'); if (body) body.scrollTop = 0; }
   if (ui.screen === 'manual') manualAfterRender(root, ui);
+  scrollCues(root);
+}
+
+/**
+ * TW-135: wherever an area can scroll, a calm cue shows that more is below (and above, once scrolled): a soft fade
+ * with a small chevron at the edge, gone at the end. One mechanism for book pages, panels, sheets and the rules.
+ * Two zero-height sticky markers inside the scroller carry the cue, so no layout changes.
+ */
+const CUE_SKIP = new Set(['TEXTAREA', 'INPUT', 'SELECT']);
+function scrollCues(root) {
+  for (const el of root.querySelectorAll('.page-r .body, .lbody, .panel, .sheet .inner, .mlist, .jscroll, .sess-recap, .ptscroll, .page-l .scroll, .log, .mncol')) {
+    if (CUE_SKIP.has(el.tagName)) continue;
+    if (!el.querySelector(':scope > .scue')) {
+      const gap = parseFloat(getComputedStyle(el).rowGap) || 0;
+      el.insertAdjacentHTML('afterbegin', `<div class="scue up" aria-hidden="true" style="margin-bottom:${-gap}px"></div>`);
+      el.insertAdjacentHTML('beforeend', `<div class="scue down" aria-hidden="true" style="margin-top:${-gap}px"></div>`);
+      el.addEventListener('scroll', () => cueState(el), { passive: true });
+    }
+    cueState(el);
+  }
+}
+function cueState(el) {
+  const more = el.scrollHeight - el.clientHeight > 4;
+  el.classList.toggle('cue-up', more && el.scrollTop > 4);
+  el.classList.toggle('cue-down', more && el.scrollTop + el.clientHeight < el.scrollHeight - 4);
 }
 
 /**
@@ -4591,7 +4630,8 @@ root.addEventListener('click', ev => {
   render();
 });
 // TW-090 (G3): an expander keeps its open state across re-draws; opening one needs no re-draw
-root.addEventListener('toggle', ev => { const k = ev.target?.dataset?.xp; if (k) XP[k] = ev.target.open; }, true);
+root.addEventListener('toggle', ev => { const k = ev.target?.dataset?.xp; if (k) XP[k] = ev.target.open; scrollCues(root); }, true);
+window.addEventListener('resize', () => scrollCues(root));
 root.addEventListener('keydown', ev => {
   if ((ev.key === 'Enter' || ev.key === ' ') && ev.target.matches('g[data-act]')) { ev.preventDefault(); ev.target.dispatchEvent(new MouseEvent('click', { bubbles: true })); }
 });
