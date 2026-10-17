@@ -1,5 +1,5 @@
-// Offline cache for the GitHub Pages build. The build replaces f1d9271755, so every release gets a fresh cache.
-const CACHE = 'twow-campaign-f1d9271755';
+// Offline cache for the GitHub Pages build. The build replaces b788b66585, so every release gets a fresh cache.
+const CACHE = 'twow-campaign-b788b66585';
 const CORE = ['./', 'index.html', 'manifest.webmanifest', 'apple-touch-icon.png', 'icon-192.png', 'icon-512.png'];
 
 self.addEventListener('install', e => {
