@@ -12,7 +12,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="icon-192.png">
 <link rel="manifest" href="manifest.webmanifest">
-<meta name="twow-build" content="bc325d40a4">
+<meta name="twow-build" content="a9ce12aa6e">
 
 <!--FONTS--><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;800;900&amp;family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&amp;family=Barlow+Semi+Condensed:ital,wght@0,500;0,600;0,700;1,500;1,600&amp;display=swap"><!--/FONTS-->
 <style>
@@ -1366,7 +1366,7 @@ class Engine {
     const get = k => a[k] ?? base[k];
     return { monsters: get('monsters') || this.C.setup?.contract_pool || null, levels: get('levels') || [1, 2, 3].filter(l => l <= Math.max(1, n)),
       terrains: get('terrains') || TERRAINS, locations: get('locations') || null, notLocations: get('not_locations') || [],
-      nearLeads: !!get('near_leads'), respawn: get('respawn') !== false };
+      nearLeads: !!get('near_leads'), respawn: get('respawn') !== false, defeatStays: get('on_defeat') !== 'remove' };
   }
 
   /** Monsters the App may place now: owned box, allowed by the campaign, not a Story foe, not on the board already. */
@@ -1697,8 +1697,9 @@ class Engine {
     this.snap();
     v.contract = key;
     // TW-194: won or Driven Away – off the board (replaced at the start of the next round); Complete Defeat – it stays
+    // unless the campaign says `on_defeat: remove` (user 2026-10-23: base setting, campaigns may override)
     const c = this.contractAt(v.loc);
-    if (c) { v.monster = c.monster; if (key !== 'defeat') this.removeContract(v.loc, 'fought'); (this.S.contracts_fought ||= []).push({ monster: c.monster, loc: v.loc, result: key, act: this.S.act, round: this.S.round }); }
+    if (c) { v.monster = c.monster; if (key !== 'defeat' || !this.contractRules().defeatStays) this.removeContract(v.loc, 'fought'); (this.S.contracts_fought ||= []).push({ monster: c.monster, loc: v.loc, result: key, act: this.S.act, round: this.S.round }); }
     this.log(t('log.contract', { result: t('contract.' + key) }));
     this.pt('fight_end', { fight: 'contract', kind: 'contract', joined: 1, players: this.S.players, pools: [], reported: key, outcome: key, loc: v.loc, monster: v.monster || null });
   }
