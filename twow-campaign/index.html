@@ -12,7 +12,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="icon-192.png">
 <link rel="manifest" href="manifest.webmanifest">
-<meta name="twow-build" content="18cedb9471">
+<meta name="twow-build" content="db573c5fe6">
 
 <!--FONTS--><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;800;900&amp;family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&amp;family=Barlow+Semi+Condensed:ital,wght@0,500;0,600;0,700;1,500;1,600&amp;display=swap"><!--/FONTS-->
 <style>
@@ -3588,7 +3588,9 @@ function placeLines(list, cards) {
 /** Contract tokens on the map: a small dark token with the Monster's Level beside the Location. */
 function contractMarks(eng) {
   return eng.contractsOnBoard().map(c => { const L = eng.LOC[c.loc]; if (!L) return '';
-    return `<g class="cmark tip" data-tip="${esc(t('map.tip_contract', { monster: c.name, level: ROMAN[c.level] || '' }))}" transform="translate(${L.map.x + 34} ${L.map.y - 30})" role="img" aria-label="${esc(t('map.contract_aria', { monster: c.name, level: ROMAN[c.level] || '' }))}">
+    // sits just left of the Location number, on the banner's line, so it reads as part of that Location (user 2026-10-23)
+    const hw = 17.5 + 7.5 * L.name.length, x = L.map.x + (L.map.banner_dx || 0) - hw - 2 - 36, y = L.map.y + 46;
+    return `<g class="cmark tip" data-tip="${esc(t('map.tip_contract', { monster: c.name, level: ROMAN[c.level] || '' }))}" transform="translate(${x} ${y})" role="img" aria-label="${esc(t('map.contract_aria', { monster: c.name, level: ROMAN[c.level] || '' }))}">
       <circle r="17" fill="#5E1A10" stroke="#F1E6CC" stroke-width="2.5"/><path d="M-7 -6 L0 -11 L7 -6 L5 6 L0 10 L-5 6 Z" fill="none" stroke="#F1E6CC" stroke-width="1.6"/><text y="5" text-anchor="middle" font-family="Cinzel, serif" font-weight="800" font-size="10" fill="#F1E6CC">${ROMAN[c.level] || ''}</text></g>`; }).join('');
 }
 
