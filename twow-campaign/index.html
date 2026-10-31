@@ -12,7 +12,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="icon-192.png">
 <link rel="manifest" href="manifest.webmanifest">
-<meta name="twow-build" content="3891a0af71">
+<meta name="twow-build" content="0693622059">
 
 <!--FONTS--><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;800;900&amp;family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&amp;family=Barlow+Semi+Condensed:ital,wght@0,500;0,600;0,700;1,500;1,600&amp;display=swap"><!--/FONTS-->
 <style>
@@ -5413,7 +5413,7 @@ function chooseScreen(DATA, ui, group, saves) {
       <div class="seg wide" role="group" aria-label="${esc(t('label.number_players'))}">${counts.map(c => `<button data-act="players" data-n="${c}" aria-pressed="${c === n}">${c}</button>`).join('')}</div>
       <p class="status" style="margin-top:8px">${esc(t('start.mages'))}</p>
       ${levelLine(ui.setupLevel || DEFAULT_LEVEL, 'setuplevelopen')}
-      ${ui.dpReady ? `<div class="lvlpick"><span class="q">${esc(t('dt.how_play'))}</span><span class="seg small" role="group">${['table', 'digital'].map(m => `<button data-act="playmode" data-m="${m}" aria-pressed="${(m === 'digital') === !!ui.setupDigital}" style="min-width:0;padding:0 12px;font-size:16px">${esc(t('dt.mode.' + m))}</button>`).join('')}</span></div>` : ''}
+      ${ui.dpOn ? `<div class="lvlpick"><span class="q">${esc(t('dt.how_play'))}</span><span class="seg small" role="group">${['table', 'digital'].map(m => `<button data-act="playmode" data-m="${m}" aria-pressed="${(m === 'digital') === !!ui.setupDigital}" style="min-width:0;padding:0 12px;font-size:16px">${esc(t('dt.mode.' + m))}</button>`).join('')}</span></div>` : ''}
       ${followHint(DATA, ui, group, sel)}
       ${saves[sel.id]?.length ? `<div class="box">${esc(t('group.running_beside'))}</div>` : ''}
       ${ownedRow(sel, ui.setupOwned || [], 'setupowned')}
@@ -6450,7 +6450,8 @@ function setupSchools(n) {
 
 function render() {
   mapTipsReset();   // TW-207
-  ui.dpReady = typeof dpUnlocked === 'function' && dpUnlocked() && !!DP?.pack;   // TW-262: digital play offered at setup
+  ui.dpOn = typeof dpUnlocked === 'function' && dpUnlocked();   // TW-262: unlocked on this device
+  ui.dpReady = ui.dpOn && !!DP?.pack;   // … and the card data is here: digital play offered at setup
   if (ui.dpReady && ui.screen === 'setup') { ui.dpSchools = DIGITAL_SCHOOLS; ui.dpSchoolPick = setupSchools(ui.setupPlayers || 2); }
   ui.edgeV = ui.screen === 'journal' || ui.displayOpen ? edgeView() : null;
   let html;
@@ -6889,7 +6890,7 @@ const ACTIONS = {
   bookpeek: () => { if (ui.lastBook) ui.bookPeek = true; },
   bookpeekoff: () => { ui.bookPeek = false; },
   bookmode: () => { if (eng.S.digital) { eng.S.digital.book = eng.S.digital.book === 'small' ? 'closed' : 'small'; } },
-  playmode: d => { ui.setupDigital = d.m === 'digital'; },
+  playmode: d => { if (d.m === 'digital' && !ui.dpReady) { ui.dp = {}; dpHasKey().then(k => { if (ui.dp) { ui.dp.hasKey = k; render(); } }); return; } ui.setupDigital = d.m === 'digital'; },   // no card data yet: the Digital play window
   dppass: () => { const v = document.getElementById('dppass')?.value || ''; dpUnlock(v).then(ok => { if (!ui.dp) return; ui.dp.msg = ok ? '' : t('dp.wrong'); if (ok) dpHasKey().then(k => { ui.dp.hasKey = k; render(); }); else render(); }); },
   dpget: () => {
     const key = document.getElementById('dpkey')?.value || '';
