@@ -12,7 +12,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="icon-192.png">
 <link rel="manifest" href="manifest.webmanifest">
-<meta name="twow-build" content="0693622059">
+<meta name="twow-build" content="49439daeae">
 
 <!--FONTS--><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;800;900&amp;family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&amp;family=Barlow+Semi+Condensed:ital,wght@0,500;0,600;0,700;1,500;1,600&amp;display=swap"><!--/FONTS-->
 <style>
@@ -1104,7 +1104,8 @@ button.leadbox[aria-pressed="true"]{outline:2px solid var(--gold,#C9A24A);outlin
 @media (prefers-reduced-motion: reduce){.dbookwrap.dopen > .book{animation:none}}
 .dputback{position:absolute;right:6px;top:6px;z-index:20;width:38px;height:38px;border-radius:50%;background:#2B211B;color:#F2D98C;border:2px solid #C9A24A;font-size:18px;font-weight:900;cursor:pointer;box-shadow:0 3px 8px rgba(0,0,0,.5)}
 .dpeek{position:absolute;inset:0;z-index:30}
-.dpeek > *:not(.dputback){pointer-events:none}
+.dpeekin{position:absolute;inset:0;pointer-events:none}
+.dminibook .dminiin *{pointer-events:none}
 .dschools{margin-top:6px}.dschools select{min-height:38px;padding:4px 8px;font-size:15px}
 
 </style>
@@ -6178,6 +6179,9 @@ const MAP_KINDS = ['idle', 'explore', 'goahead', 'surprise', 'round_end'];
 /** The screen is a map turn (the table), not a book page. */
 const isTableView = v => MAP_KINDS.includes(v?.kind) && !(v.kind === 'goahead' && v.choice === 'fight' && !v.nothing);
 
+/** A book page as a picture: its buttons and fields no longer act (data-act, ids and inputs switched off). */
+const inert = html => String(html).replace(/\sdata-act=/g, ' data-off=').replace(/\sid="/g, ' data-id="').replace(/<(input|select|textarea)\b/g, '<$1 disabled');
+
 /** The ⤓ icon at the border of a book page (T-4b). */
 const putBack = () => `<button class="dputback" data-act="bookdown" aria-label="${esc(t('dt.put_back'))}" title="${esc(t('dt.put_back'))}">⤓</button>`;
 
@@ -6198,8 +6202,9 @@ function tableScreen(eng, ui, mapHtml, bookHtml) {
   const left = `<aside class="dt-left" aria-label="${esc(t('dt.action_cards'))}"><div class="dlbl">${esc(t('dt.action_cards'))}</div>
     ${cardBack(t('dt.action_deck'), T.deck.length)}
     <div class="dpool">${T.pool.map(id => `<div class="dslot">${id ? cardSVG(packCard(pack, id), { layout: pack?.layout }) : ''}</div>`).join('')}</div></aside>`;
+  // the small book shows the last page as a picture: no button may sit inside a button, and nothing in it reacts
   const book = T.book === 'small' && ui.lastBook && !waiting
-    ? `<button class="dminibook" data-act="bookpeek" aria-label="${esc(t('dt.pick_up'))}"><div class="dminiin">${ui.lastBook}</div><span class="dico">⤢</span></button>`
+    ? `<div class="dminibook" role="button" tabindex="0" data-act="bookpeek" aria-label="${esc(t('dt.pick_up'))}"><div class="dminiin" aria-hidden="true">${inert(ui.lastBook)}</div><span class="dico">⤢</span></div>`
     : `<button class="dclosedbook${waiting ? ' glow' : ''}" data-act="${waiting ? 'bookup' : 'bookpeek'}" aria-label="${esc(t(waiting ? 'dt.book_waits' : 'dt.book'))}"><span class="demb">${esc(eng.C.title)}</span><span class="dribbon"></span></button>`;
   const boards = T.witchers.map((w, i) => `<div class="dboard${i === active ? ' on' : ''}"><b>${esc(w.name || t('player.n', { n: i + 1 }))} · ${esc(t('dt.school.' + w.school))}</b>
     <span class="dattrs">${['combat', 'defense', 'alchemy', 'specialty'].map(a => `<i title="${esc(t('dt.attr.' + a))}">${esc(t('dt.attr_short.' + a))} ${w.attrs[a]}</i>`).join('')}</span>
@@ -6210,7 +6215,7 @@ function tableScreen(eng, ui, mapHtml, bookHtml) {
     ${waiting ? `<p class="dtag glow">${esc(t('dt.book_waits'))}</p>` : `<div class="drow"><button class="dtag" data-act="bookmode">${esc(t(T.book === 'small' ? 'dt.book_close' : 'dt.book_small'))}</button></div>`}
     ${!pack ? `<p class="dtag warn">${esc(t('dt.no_pack'))}</p>` : ''}
     <div class="dboards">${boards}</div>${hand}</aside>`;
-  const peek = ui.bookPeek && ui.lastBook ? `<div class="dpeek">${ui.lastBook}<button class="dputback" data-act="bookpeekoff" aria-label="${esc(t('dt.put_back'))}">⤓</button></div>` : '';
+  const peek = ui.bookPeek && ui.lastBook ? `<div class="dpeek"><div class="dpeekin" aria-hidden="true">${inert(ui.lastBook)}</div><button class="dputback" data-act="bookpeekoff" aria-label="${esc(t('dt.put_back'))}">⤓</button></div>` : '';
   return `<div class="dtable">${mapHtml}${left}${right}</div>${peek}`;
 }
 
