@@ -12,7 +12,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="icon-192.png">
 <link rel="manifest" href="manifest.webmanifest">
-<meta name="twow-build" content="49439daeae">
+<meta name="twow-build" content="44f0334f1d">
 
 <!--FONTS--><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;800;900&amp;family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&amp;family=Barlow+Semi+Condensed:ital,wght@0,500;0,600;0,700;1,500;1,600&amp;display=swap"><!--/FONTS-->
 <style>
@@ -6175,6 +6175,7 @@ const cardBack = (label = '', n = null) => `<div class="dpile"><svg viewBox="0 0
 
 
 
+
 const MAP_KINDS = ['idle', 'explore', 'goahead', 'surprise', 'round_end'];
 /** The screen is a map turn (the table), not a book page. */
 const isTableView = v => MAP_KINDS.includes(v?.kind) && !(v.kind === 'goahead' && v.choice === 'fight' && !v.nothing);
@@ -6192,7 +6193,7 @@ const putBack = () => `<button class="dputback" data-act="bookdown" aria-label="
 function tableScreen(eng, ui, mapHtml, bookHtml) {
   const T = eng.S.digital, step = eng.S.step;
   if (bookHtml && ui.bookDown !== step) {
-    ui.lastBook = bookHtml;
+    ui.lastBook = bookHtml; ui.lastBookJournal = false;
     const opening = ui.onTable; ui.onTable = false;   // the book opens from the table: one short animation
     return `<div class="dbookwrap${opening ? ' dopen' : ''}">${bookHtml}${putBack()}</div>`;
   }
@@ -6203,6 +6204,8 @@ function tableScreen(eng, ui, mapHtml, bookHtml) {
     ${cardBack(t('dt.action_deck'), T.deck.length)}
     <div class="dpool">${T.pool.map(id => `<div class="dslot">${id ? cardSVG(packCard(pack, id), { layout: pack?.layout }) : ''}</div>`).join('')}</div></aside>`;
   // the small book shows the last page as a picture: no button may sit inside a button, and nothing in it reacts
+  // no page read yet (a new session, the App reloaded): the book lies open at the Journal's goal page
+  if (!ui.lastBook) { ui.lastBook = journalScreen(eng, { ...ui, journalTab: 'goal' }); ui.lastBookJournal = true; }
   const book = T.book === 'small' && ui.lastBook && !waiting
     ? `<div class="dminibook" role="button" tabindex="0" data-act="bookpeek" aria-label="${esc(t('dt.pick_up'))}"><div class="dminiin" aria-hidden="true">${inert(ui.lastBook)}</div><span class="dico">⤢</span></div>`
     : `<button class="dclosedbook${waiting ? ' glow' : ''}" data-act="${waiting ? 'bookup' : 'bookpeek'}" aria-label="${esc(t(waiting ? 'dt.book_waits' : 'dt.book'))}"><span class="demb">${esc(eng.C.title)}</span><span class="dribbon"></span></button>`;
@@ -6892,7 +6895,7 @@ const ACTIONS = {
   // TW-262: the book on the table – put it down, pick it up, open small or closed
   bookdown: () => { ui.bookDown = eng.S.step; ui.bookPeek = false; },
   bookup: () => { ui.bookDown = null; },
-  bookpeek: () => { if (ui.lastBook) ui.bookPeek = true; },
+  bookpeek: () => { if (ui.lastBookJournal || !ui.lastBook) { ui.screen = 'journal'; ui.journalTab = 'goal'; } else ui.bookPeek = true; },   // the Journal is the book between pages
   bookpeekoff: () => { ui.bookPeek = false; },
   bookmode: () => { if (eng.S.digital) { eng.S.digital.book = eng.S.digital.book === 'small' ? 'closed' : 'small'; } },
   playmode: d => { if (d.m === 'digital' && !ui.dpReady) { ui.dp = {}; dpHasKey().then(k => { if (ui.dp) { ui.dp.hasKey = k; render(); } }); return; } ui.setupDigital = d.m === 'digital'; },   // no card data yet: the Digital play window
