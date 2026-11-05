@@ -12,7 +12,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="icon-192.png">
 <link rel="manifest" href="manifest.webmanifest">
-<meta name="twow-build" content="51b9b9ccb7">
+<meta name="twow-build" content="4eb46f521e">
 
 <!--FONTS--><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;800;900&amp;family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&amp;family=Barlow+Semi+Condensed:ital,wght@0,500;0,600;0,700;1,500;1,600&amp;display=swap"><!--/FONTS-->
 <style>
@@ -9058,7 +9058,7 @@ const ACTIONS = {
   display: () => { ui.displayOpen = true; },
   displayclose: () => { ui.displayOpen = false; },
   // TW-262 (D-1b): Digital play – password, then the read-only key; the stats pack stays on this device
-  dpopen: () => { ui.displayOpen = false; ui.dp = {}; if (typeof dpLoad === 'function') Promise.all([dpLoad(), dpHasKey()]).then(([, k]) => { if (ui.dp) { ui.dp.hasKey = k; render(); } }); },
+  dpopen: () => { ui.displayOpen = false; ui.dp = {}; if (typeof dpLoad === 'function') Promise.all([dpLoad(), dpHasKey()]).then(([, k]) => { if (ui.dp) { ui.dp.hasKey = k; if (dpUnlocked()) render(); } }); },   // locked: no redraw – it would clear the password being typed
   dpclose: () => { ui.dp = null; },
   // TW-262: the book on the table – put it down, pick it up, open small or closed
   bookdown: () => { ui.bookDown = eng.S.step; ui.bookPeek = false; },
@@ -9121,7 +9121,7 @@ const ACTIONS = {
   dfmon: () => { ui.dfMon = true; },
   dfmonoff: () => { ui.dfMon = false; },
   bookmode: () => { if (eng.S.digital) { eng.S.digital.book = eng.S.digital.book === 'small' ? 'closed' : 'small'; } },
-  playmode: d => { if (d.m === 'digital' && !ui.dpReady) { ui.dp = {}; dpHasKey().then(k => { if (ui.dp) { ui.dp.hasKey = k; render(); } }); return; } ui.setupDigital = d.m === 'digital'; },   // no card data yet: the Digital play window
+  playmode: d => { if (d.m === 'digital' && !ui.dpReady) { ui.dp = {}; dpHasKey().then(k => { if (ui.dp) { ui.dp.hasKey = k; if (dpUnlocked()) render(); } }); return; } ui.setupDigital = d.m === 'digital'; },   // no card data yet: the Digital play window
   dppass: () => { const v = document.getElementById('dppass')?.value || ''; dpUnlock(v).then(ok => { if (!ui.dp) return; ui.dp.msg = ok ? '' : t('dp.wrong'); render(); if (ok) dpHasKey().then(k => { if (ui.dp) { ui.dp.hasKey = k; render(); } }); }) },   // the unlocked window shows at once; whether a key is stored follows
   dpget: () => {
     const key = document.getElementById('dpkey')?.value || '';
