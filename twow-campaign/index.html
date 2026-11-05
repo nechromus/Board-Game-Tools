@@ -12,7 +12,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="icon-192.png">
 <link rel="manifest" href="manifest.webmanifest">
-<meta name="twow-build" content="99d6ad8a0d">
+<meta name="twow-build" content="51b9b9ccb7">
 
 <!--FONTS--><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;800;900&amp;family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&amp;family=Barlow+Semi+Condensed:ital,wght@0,500;0,600;0,700;1,500;1,600&amp;display=swap"><!--/FONTS-->
 <style>
@@ -6267,12 +6267,14 @@ function idb() {
   return new Promise((ok, no) => {
     let r; try { r = indexedDB.open('twow-digital', 1); } catch (e) { no(e); return; }
     r.onupgradeneeded = () => r.result.createObjectStore('kv');
-    r.onsuccess = () => ok(r.result); r.onerror = () => no(r.error);
+    r.onsuccess = () => { const db = r.result; db.onversionchange = () => db.close(); ok(db); };   // never hold up a delete or an upgrade
+    r.onerror = () => no(r.error); r.onblocked = () => no(new Error('storage busy'));
   });
 }
 async function kv(mode, fn) {
   const db = await idb();
-  return new Promise((ok, no) => { const tx = db.transaction('kv', mode), st = tx.objectStore('kv'); const req = fn(st); tx.oncomplete = () => ok(req?.result); tx.onerror = () => no(tx.error); });
+  // each call opens and closes its own connection (open connections left behind blocked a later delete and every open after it)
+  return new Promise((ok, no) => { const tx = db.transaction('kv', mode), st = tx.objectStore('kv'); const req = fn(st); tx.oncomplete = () => { db.close(); ok(req?.result); }; tx.onerror = tx.onabort = () => { db.close(); no(tx.error); }; });
 }
 const kvGet = k => kv('readonly', st => st.get(k));
 const kvSet = (k, v) => kv('readwrite', st => st.put(v, k));
@@ -9120,7 +9122,7 @@ const ACTIONS = {
   dfmonoff: () => { ui.dfMon = false; },
   bookmode: () => { if (eng.S.digital) { eng.S.digital.book = eng.S.digital.book === 'small' ? 'closed' : 'small'; } },
   playmode: d => { if (d.m === 'digital' && !ui.dpReady) { ui.dp = {}; dpHasKey().then(k => { if (ui.dp) { ui.dp.hasKey = k; render(); } }); return; } ui.setupDigital = d.m === 'digital'; },   // no card data yet: the Digital play window
-  dppass: () => { const v = document.getElementById('dppass')?.value || ''; dpUnlock(v).then(ok => { if (!ui.dp) return; ui.dp.msg = ok ? '' : t('dp.wrong'); if (ok) dpHasKey().then(k => { ui.dp.hasKey = k; render(); }); else render(); }); },
+  dppass: () => { const v = document.getElementById('dppass')?.value || ''; dpUnlock(v).then(ok => { if (!ui.dp) return; ui.dp.msg = ok ? '' : t('dp.wrong'); render(); if (ok) dpHasKey().then(k => { if (ui.dp) { ui.dp.hasKey = k; render(); } }); }) },   // the unlocked window shows at once; whether a key is stored follows
   dpget: () => {
     const key = document.getElementById('dpkey')?.value || '';
     ui.dp = { ...ui.dp, step: 'busy', msg: '' };
