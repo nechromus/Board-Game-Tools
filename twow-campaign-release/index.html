@@ -12,7 +12,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="icon-192.png">
 <link rel="manifest" href="manifest.webmanifest">
-<meta name="twow-build" content="113735aac4">
+<meta name="twow-build" content="336219ef36">
 
 <!--FONTS--><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;800;900&amp;family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&amp;family=Barlow+Semi+Condensed:ital,wght@0,500;0,600;0,700;1,500;1,600&amp;display=swap"><!--/FONTS-->
 <style>
@@ -1494,13 +1494,20 @@ svg.dcard[data-card]{-webkit-touch-callout:none;-webkit-user-select:none;user-se
 .fxlist{gap:8px}.fxtxt b{line-height:1.18}
 
 /* ---------- Phase II at a Location: the book (user decisions 2026-11-08, L-2f) ---------- */
-.lvbook{position:absolute;top:72px;bottom:12px;left:14px;right:14px;max-width:1160px;margin:0 auto;background:#2B2116;border-radius:8px;padding:12px;box-shadow:0 14px 40px rgba(10,6,2,.7);z-index:5;container-type:inline-size}
-.lvspread{height:100%;display:grid;grid-template-columns:1fr 26px 1.08fr}
+/* the same book as the story (.book: the gutter around it, two equal pages with the spine shading), held a little
+   smaller over the map; following a card lifts it to full size and the story fills its pages (user 2026-11-08, Z-1) */
+.lvbook{position:absolute;inset:var(--gutter);transform:translateY(var(--lvdy,12px)) scale(var(--lvs,.84));transform-origin:50% 50%;box-shadow:0 14px 40px rgba(0,0,0,.6);z-index:5;container-type:inline-size}
+.lvspread{height:100%;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
 /* a narrow map (the digital table beside it): one page – the Location as a short head, the cards below */
-@container (max-width:780px){.lvspread{grid-template-columns:1fr;grid-template-rows:auto 1fr}.lvgut,.lvpic,.lvpage.l .kicker{display:none}.lvpage.l{border-radius:4px 4px 0 0;padding:12px 18px 6px;overflow:visible}.lvpage.r{border-radius:0 0 4px 4px;padding-top:8px}.lvname{font-size:30px;margin-right:44px}.lvsub{margin-bottom:0}.lvnarr{font-size:18px;margin-top:6px}.lvgrid.lg{grid-template-columns:repeat(3,1fr)}.lvgrid.lg .lvc{min-height:200px}.lvgrid.lg .lvtx{-webkit-line-clamp:6}}
-.lvpage{position:relative;background:var(--page);padding:20px 24px 16px;overflow:auto;-webkit-overflow-scrolling:touch;display:flex;flex-direction:column;min-height:0}
-.lvpage.l{background:var(--page-l);border-radius:4px 0 0 4px}.lvpage.r{border-radius:0 4px 4px 0}
-.lvgut{background:linear-gradient(90deg,var(--page-l),#C9B48A 45%,#B9A278 50%,#C9B48A 55%,var(--page))}
+@container (max-width:780px){.lvspread{grid-template-columns:1fr;grid-template-rows:auto 1fr}.lvpic,.lvpage.l .kicker{display:none}.lvpage.l{border-radius:6px 6px 0 0;border-right:2px solid var(--line);border-bottom:none;padding:12px 18px 6px;overflow:visible}.lvpage.l::after,.lvpage.r::before{display:none}.lvpage.r{border-radius:0 0 6px 6px;border-left:2px solid var(--line);border-top:none;padding-top:8px}.lvname{font-size:30px;margin-right:44px}.lvsub{margin-bottom:0}.lvnarr{font-size:18px;margin-top:6px}.lvgrid.lg{grid-template-columns:repeat(3,1fr)}.lvgrid.lg .lvc{min-height:200px}.lvgrid.lg .lvtx{-webkit-line-clamp:6}}
+.lvpage{overflow:auto;-webkit-overflow-scrolling:touch}
+.lvpage.l{gap:0}
+.lvpage>*:not(.lvbig){position:relative;z-index:1}
+.lvdim{position:absolute;inset:0;background:var(--table);opacity:0;z-index:48;pointer-events:none}
+.lvbook.lifting{z-index:49}
+.book.lvfill .page-l>*,.book.lvfill .page-r>*{animation:lvfill .3s ease-out both}
+@keyframes lvfill{from{opacity:0}to{opacity:1}}
+@media (prefers-reduced-motion:reduce){.book.lvfill .page-l>*,.book.lvfill .page-r>*{animation:none}}
 .lvx{position:absolute;top:18px;right:20px;z-index:3}
 .lvname{font-family:var(--display);font-weight:900;font-size:40px;line-height:1.05;margin-top:4px;overflow-wrap:anywhere}
 .lvsub{font-size:16px;font-weight:600;color:var(--muted);margin:4px 0 12px}
@@ -1535,9 +1542,9 @@ svg.dcard[data-card]{-webkit-touch-callout:none;-webkit-user-select:none;user-se
 .lvc.enc b{font-family:var(--display);font-weight:800;font-size:15px;letter-spacing:1.5px;text-transform:uppercase}
 .lvc.enc i{font-family:var(--read);font-size:16px;color:#E9DEBE}
 .lvc.enc .lvsign{color:#E7C98A}
-.lvc.enc.row{flex-direction:row;gap:10px;justify-content:flex-start;text-align:left;padding:10px 14px}
-.lvc.enc.row .lvtx{color:#E9DEBE;margin:2px 0 0;font-size:14px}
-.lvc.enc.row b{display:block}.lvc.enc.row{align-items:center}.lvrt{min-width:0}
+.lvc.enc.lvrow{flex-direction:row;gap:10px;justify-content:flex-start;text-align:left;padding:10px 14px}
+.lvc.enc.lvrow .lvtx{color:#E9DEBE;margin:2px 0 0;font-size:14px}
+.lvc.enc.lvrow b{display:block}.lvc.enc.lvrow{align-items:center}.lvrt{min-width:0}
 .lvnav{display:flex;justify-content:space-between;align-items:center;margin-top:6px}
 .lvpn{font-size:14px;font-weight:600;color:var(--muted)}
 .lvor{display:flex;align-items:center;gap:10px;margin:14px 0 10px;font-family:var(--read);font-style:italic;font-size:19px;color:var(--muted)}
@@ -4838,14 +4845,14 @@ function locBook(eng, ui, id, info) {
   const plaque = (choice, icon, title, note, ok = true) => `<button class="lvplq${ok ? '' : ' off'}" data-act="declare" data-choice="${choice}"${ok ? '' : ' disabled'}><span class="lvpi" aria-hidden="true">${icon}</span><span><b>${esc(title)}</b><small>${esc(note)}</small></span></button>`;
   const text = locText(eng, id);
   const teach = eng.taught('declare') && !eng.teach('declare', 'step:' + eng.S.step) ? tutorialBoxes([teachBox(eng, 'declare', 'step:' + eng.S.step)]) : '';
-  const left = `<div class="lvpage l"><div class="kicker">${esc(t('lv.kicker', { loc: L.name }))}</div><div class="lvname">${esc(L.name)}</div>
+  const left = `<section class="page-l lvpage l"><div class="kicker">${esc(t('lv.kicker', { loc: L.name }))}</div><div class="lvname">${esc(L.name)}</div>
     <div class="lvsub">${L.number} · ${esc(terrainName(L.terrain))}${L.school ? ' · ' + esc(schoolName(L.school)) : ''}</div>
-    <div class="lvpic">${vignetteSVG(eng, ui.mapUrl, id, { w: 560, h: 300 })}</div>${text ? `<p class="lvnarr">${esc(text)}</p>` : ''}${teach}</div>`;
+    <div class="lvpic">${vignetteSVG(eng, ui.mapUrl, id, { w: 560, h: 300 })}</div>${text ? `<p class="lvnarr">${esc(text)}</p>` : ''}${teach}</section>`;
   const nav = pages > 1 ? `<div class="lvnav">${pg > 0 ? `<button class="undolink" data-act="lvpage" data-p="${pg - 1}">‹ ${esc(t('btn.back'))}</button>` : '<span></span>'}<span class="lvpn">${pg + 1} / ${pages}</span>${pg < pages - 1 ? `<button class="undolink" data-act="lvpage" data-p="${pg + 1}">${esc(t('lv.more'))} ›</button>` : '<span></span>'}</div>` : '';
-  const right = `<div class="lvpage r"><div class="lvhead">${esc(t('lv.choose'))}</div>${size === 'lg' ? `<div class="lvgrid lg c${n - 2}">${shown.filter(c => !c.enc).map(c => lvCard(c, 'lg')).join('')}</div><div class="lvencs">${shown.filter(c => c.enc).map(c => lvCard(c, 'row')).join('')}</div>` : `<div class="lvgrid sm">${shown.map(c => lvCard(c, 'sm')).join('')}</div>`}${nav}
+  const right = `<section class="page-r lvpage r"><div class="lvhead">${esc(t('lv.choose'))}</div>${size === 'lg' ? `<div class="lvgrid lg c${n - 2}">${shown.filter(c => !c.enc).map(c => lvCard(c, 'lg')).join('')}</div><div class="lvencs">${shown.filter(c => c.enc).map(c => lvCard(c, 'lvrow')).join('')}</div>` : `<div class="lvgrid sm">${shown.map(c => lvCard(c, 'sm')).join('')}</div>`}${nav}
     <div class="lvor"><span>${esc(t('lv.or'))}</span></div><div class="lvplqs">${plaque('fight', ICON.fight, choiceName('fight'), fNote, canF)}${plaque('rest', ICON.rest, t('panel.rest_button'), t(L.school ? 'panel.rest_short_school' : 'panel.rest_short') + (dreams.length ? ' · ' + t('panel.dream_short') : ''))}</div>
-    ${open ? lvBig(open) : ''}</div>`;
-  return `<section class="lvbook" aria-label="${esc(t('panel.aria', { loc: L.name }))}"><button class="iconbtn lvx" data-act="closepanel" aria-label="${esc(t('btn.close'))}">${ICON.close}</button><div class="lvspread">${left}<div class="lvgut" aria-hidden="true"></div>${right}</div></section>`;
+    ${open ? lvBig(open) : ''}</section>`;
+  return `<section class="lvbook" aria-label="${esc(t('panel.aria', { loc: L.name }))}"><button class="iconbtn lvx" data-act="closepanel" aria-label="${esc(t('btn.close'))}">${ICON.close}</button><div class="lvspread">${left}${right}</div></section>`;
 }
 
 function panel(eng, ui, id, info) {
@@ -6896,6 +6903,7 @@ function render() {
     if (pg && ui.lastPage && (pg !== ui.lastPage || pv !== ui.lastPV)) { b.insertAdjacentHTML('beforeend', `<div class="leaf${back ? ' back' : ''}" aria-hidden="true"></div>`); b.classList.add('pageturn');
       const leaf = b.lastElementChild; setTimeout(() => { leaf.remove(); b.classList.remove('pageturn'); }, 1000); }
     ui.lastPage = pg; ui.lastPV = pv;
+    if (b && ui.lvFill && Date.now() - ui.lvFill < 1500) { b.classList.add('lvfill'); setTimeout(() => b.classList.remove('lvfill'), 400); } ui.lvFill = null;
   }
   if (ui.screen !== 'manual') linkRuleRefs(root);
   lastKey = key;
@@ -7521,12 +7529,30 @@ mapZoom(root, () => render());   // user 2026-10-24: pinch / drag / wheel on the
 root.addEventListener('click', ev => {
   const el = ev.target.closest('[data-act]'); if (!el || el.disabled) return;
   const fn = ACTIONS[el.dataset.act]; if (!fn) return;
+  if (el.dataset.act === 'lvgo' && liftBook(() => runAct(el, fn))) return;   // user 2026-11-08 (Z-1): the Location book is lifted first
+  runAct(el, fn);
+});
+/** Z-1: the Location book is lifted to full size while the map darkens and its pages empty; then the story fills them. */
+function liftBook(then) {
+  const bk = root.querySelector('.lvbook');
+  if (!bk || lifting || eng?.S?.digital || matchMedia('(prefers-reduced-motion: reduce)').matches || !bk.animate) return false;
+  lifting = true;
+  const dim = document.createElement('div'); dim.className = 'lvdim'; bk.parentNode.insertBefore(dim, bk); bk.classList.add('lifting');
+  const cs = getComputedStyle(bk), from = cs.transform && cs.transform !== 'none' ? cs.transform : 'none';
+  dim.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 420, fill: 'forwards' });
+  bk.animate([{ transform: from }, { transform: 'none' }], { duration: 480, easing: 'cubic-bezier(.3,.7,.2,1)', fill: 'forwards' });
+  bk.querySelectorAll('.lvpage > *, .lvx').forEach(n => n.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 220, delay: 260, fill: 'forwards' }));
+  setTimeout(() => { lifting = false; ui.lvFill = Date.now(); then(); }, 500);
+  return true;
+}
+let lifting = false;
+function runAct(el, fn) {
   ui.toast = null;
   if (el.dataset.act !== 'homemenu') ui.homeMenu = false;   // any other tap closes the home menu
   try { fn(el.dataset); if (ui.screen === 'game' && eng?.S?.digital && typeof beginTableFight === 'function') dfSync(); } catch (e) { console.error(e); ui.toast = t('toast.failed', { error: e.message }); }
   if (!['title', 'choose', 'setup', 'manual', 'tests'].includes(ui.screen)) save();
   render();
-});
+}
 // TW-090 (G3): an expander keeps its open state across re-draws; opening one needs no re-draw
 root.addEventListener('toggle', ev => { const k = ev.target?.dataset?.xp; if (k) XP[k] = ev.target.open; scrollCues(root); }, true);
 window.addEventListener('resize', () => scrollCues(root));
