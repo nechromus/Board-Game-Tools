@@ -12,7 +12,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="icon-192.png">
 <link rel="manifest" href="manifest.webmanifest">
-<meta name="twow-build" content="fde5eb7f40">
+<meta name="twow-build" content="b39a7537c3">
 
 <!--FONTS--><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;800;900&amp;family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&amp;family=Barlow+Semi+Condensed:ital,wght@0,500;0,600;0,700;1,500;1,600&amp;display=swap"><!--/FONTS-->
 <style>
@@ -5465,7 +5465,8 @@ function fightStep(eng, ui, f) {
   const koEnd = f.story ? `<button class="btn line small" data-act="ko">${esc(t('fight.btn_ko'))}</button>` : f.outcomes?.includes('knocked_out') ? `<button class="btn line small" data-act="outcome" data-k="knocked_out">${esc(t('fight.out.knocked_out'))}</button>` : '';
   const strain = f.levelRules.no_strain ? `<div class="fhrow fhstrain"><span class="lvlnote">${esc(t('level.no_strain_slot', { level: t('level.name.' + f.levelId) }))}</span></div>`
     : `<div class="fhrow fhstrain">${xp('strainslot', esc(t('fx.strain_line')), `<p>${esc(t('fight.strain_slot'))}</p>`, { cls: 'plain fhxp' })}</div>`;
-  const hopts = { first: f.poolNumber > 1 || !f.story || f.roundsDone ? '' : firstShort(eng, f), stop: f.story && f.canStop ? `<button class="btn line small fhstop" data-act="stopask">${esc(t('fight.btn_stop'))}</button>` : '', koEnd, strain };
+  // the round-1 banner: every fight on this page, Skirmishes too (user 2026-11-09)
+  const hopts = { first: f.poolNumber > 1 || f.roundsDone ? '' : firstShort(eng, f), stop: f.story && f.canStop ? `<button class="btn line small fhstop" data-act="stopask">${esc(t('fight.btn_stop'))}</button>` : '', koEnd, strain };
   const boxed = f.pool != null || f.poolEmpty;
   if (boxed) body += fightHeader(eng, ui, f, chapterOf(eng), ui.dpFight && ui.dpPool != null ? ui.dpPool : f.pool, !ui.dpFight, hopts) + (f.pool != null && !f.poolEmpty ? modNote(f) : '');
   if (ui.dpFight) body += `<p class="lvlnote">${esc(t('df.counts', { n: (f.roundsDone || 0) + 1 }))}</p>`;   // TW-262: digital play – the table counts
