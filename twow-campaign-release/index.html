@@ -12,7 +12,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="icon-192.png">
 <link rel="manifest" href="manifest.webmanifest">
-<meta name="twow-build" content="b39a7537c3">
+<meta name="twow-build" content="d42a54cd58">
 
 <!--FONTS--><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;800;900&amp;family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&amp;family=Barlow+Semi+Condensed:ital,wght@0,500;0,600;0,700;1,500;1,600&amp;display=swap"><!--/FONTS-->
 <style>
@@ -5175,11 +5175,13 @@ function activeEffects(eng, f, chapter) {
   return out;
 }
 
-/** The Witchers in this fight, by name (for one tick each). */
+/** The Witchers in this fight, by name (for one tick each). The one who fights alone is the ambushed Witcher (f.who)
+ *  or, during the rounds, the player whose Turn it is (TW-301 bug: the first player was named in Turn 4). */
 function fighters(eng, f) {
   const names = (eng.S.names || []).filter(Boolean), n = Math.max(1, f.participants || 1);
-  if (n === 1) return [f.who || names[0] || t('player.n', { n: 1 })];
-  const start = Math.max(0, names.indexOf(f.who));
+  const act = eng.activePlayer?.(), lead = f.who || (act ? eng.playerName(act) : null);
+  if (n === 1) return [lead || names[0] || t('player.n', { n: 1 })];
+  const start = Math.max(0, names.indexOf(lead));
   return Array.from({ length: n }, (_, i) => names[(start + i) % Math.max(1, names.length)] || t('player.n', { n: i + 1 }));
 }
 
