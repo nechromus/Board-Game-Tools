@@ -151,7 +151,7 @@ dl{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;margin:0;font-size:.
 
 <script>
 "use strict";
-const APP_VERSION = "1.1.0";
+const APP_VERSION = "1.1.1";
 const OWNER = "nechromus", REPO = "RulesHelperData", BRANCH = "main", API = "https://api.github.com";
 const $ = id => document.getElementById(id);
 
@@ -381,21 +381,23 @@ function dataChanged(old) {
 
 /* ---------- App-Update ---------- */
 let pendingApp = null;
-async function checkApp() {
+let serverVersion = null;
+async function checkApp(force) {
   try {
     const r = await fetch("version.json?t=" + Date.now(), { cache: "no-store" });
-    if (!r.ok) return;
-    const v = (await r.json()).version;
+    if (!r.ok) return null;
+    const v = (await r.json()).version; serverVersion = v || null;
     if (v && v !== APP_VERSION) {
       pendingApp = v;
-      if (!current && $("setup").hidden) applyApp();
+      if (!current && $("setup").hidden) applyApp(force);
       else if (current) banner("App-Update " + v + " wird beim Zurück zur Übersicht installiert.");
     }
-  } catch (e) {}
+    return v;
+  } catch (e) { return null; }
 }
-function applyApp() {
+function applyApp(force) {
   const k = "rh-upd-" + pendingApp, last = +(LS.get(k) || 0);
-  if (Date.now() - last < 10 * 60e3) return;   // schon versucht: Server liefert noch die alte Fassung
+  if (!force && Date.now() - last < 10 * 60e3) return;   // schon versucht: Server liefert noch die alte Fassung
   LS.set(k, String(Date.now()));
   const go = () => location.replace(location.pathname + "?v=" + encodeURIComponent(pendingApp));
   try {
@@ -509,7 +511,7 @@ async function renderInfo() {
   let size = "";
   try { const est = await navigator.storage.estimate(); size = (est.usage / 1048576).toFixed(0) + " MB"; } catch (e) {}
   const ready = games.filter(x => offlineReady(x.slug)).length;
-  $("info").innerHTML = `<dt>App</dt><dd>Version ${APP_VERSION}</dd>
+  $("info").innerHTML = `<dt>App</dt><dd>Version ${APP_VERSION}${serverVersion && serverVersion !== APP_VERSION ? " · verfügbar: " + esc(serverVersion) : ""}</dd>
     <dt>Daten</dt><dd>${state.date ? fmtDate(state.date) + " · " + esc((state.commit || "").slice(0, 7)) : "–"}</dd>
     <dt>Geprüft</dt><dd>${lastCheck ? new Date(lastCheck).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" }) + " Uhr" : online === false ? "offline" : "–"}</dd>
     <dt>Offline</dt><dd>${ready} von ${games.length} Spielen${size ? " · " + size + " belegt" : ""}</dd>`;
@@ -518,8 +520,9 @@ $("gear").addEventListener("click", () => { show("settings"); renderInfo(); });
 $("setBack").addEventListener("click", () => { show("home"); renderGrid(); });
 $("chkNow").addEventListener("click", async () => {
   const m = $("chkMsg"); m.className = "msg"; m.textContent = "Suche …";
-  await checkApp();
-  try { const ch = await checkData(); m.textContent = ch ? "Neue Daten geladen." : "Alles aktuell."; }
+  const sv = await checkApp(true);
+  const appTxt = sv == null ? "App: Server nicht erreichbar." : sv === APP_VERSION ? "App " + APP_VERSION + " ist aktuell." : "App-Update " + sv + " wird geladen …";
+  try { const ch = await checkData(); m.textContent = appTxt + " " + (ch ? "Neue Spieldaten geladen." : "Spieldaten aktuell."); }
   catch (e) { m.className = "msg bad"; m.textContent = authProblem || "Keine Verbindung zu GitHub."; }
   renderInfo();
 });
