@@ -63,6 +63,13 @@ dl{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;margin:0;font-size:.
 #loading{position:fixed;inset:0;z-index:11;display:flex;align-items:center;justify-content:center;background:var(--bg);color:var(--muted);font-size:1.05rem}
 .spin{width:22px;height:22px;border:3px solid var(--line);border-top-color:var(--acc);border-radius:50%;animation:sp 0.8s linear infinite;margin-right:12px}
 @keyframes sp{to{transform:rotate(360deg)}}
+.ov{position:fixed;inset:0;z-index:30;background:rgba(10,11,14,.92);display:flex;align-items:center;justify-content:center;padding:calc(16px + env(safe-area-inset-top,0px)) 16px calc(16px + env(safe-area-inset-bottom,0px));overflow:auto}
+.ovc{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px;width:100%;max-width:420px}
+.ovc h2{margin-bottom:8px}
+#scanVideo{width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px;background:#000;display:block}
+.qrwrap{background:#fff;border-radius:8px;padding:10px;margin:12px auto 4px;max-width:320px}
+#qrCanvas{width:100%;height:auto;display:block;image-rendering:pixelated}
+.warn{background:#3a2a22;border:1px solid #6b4a36;border-radius:6px;padding:8px 10px;font-size:.88rem;margin:8px 0}
 .prog{height:6px;background:#14161b;border-radius:3px;overflow:hidden;margin-top:10px}.prog i{display:block;height:100%;width:0;background:var(--acc);transition:width .2s}
 </style>
 </head>
@@ -86,8 +93,9 @@ dl{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;margin:0;font-size:.
       <li><b>Permissions → Repository permissions → Contents:</b> „Read-only“. Mehr braucht es nicht.</li>
       <li>Ablaufdatum wählen, Token erzeugen, kopieren und hier einfügen.</li>
     </ol>
+    <p class="small">Läuft die Regelhilfe schon auf einem anderen Gerät, geht es schneller: dort unter Einstellungen „Token per QR-Code teilen“ wählen und hier „QR-Code scannen“ tippen. Einen geteilten Link kannst du auch einfach in das Feld einfügen.</p>
     <input type="password" id="tok" placeholder="github_pat_…" autocomplete="off" autocapitalize="off" spellcheck="false">
-    <div class="row"><button class="btn" id="tokSave">Speichern und prüfen</button><button class="btn sec" id="tokCancel" hidden>Abbrechen</button></div>
+    <div class="row"><button class="btn" id="tokSave">Speichern und prüfen</button><button class="btn sec" id="qrScan">QR-Code scannen</button><button class="btn sec" id="tokCancel" hidden>Abbrechen</button></div>
     <div class="msg" id="tokMsg"></div>
     <p class="small">Der Token wird nur auf diesem Gerät gespeichert und nur an api.github.com geschickt. Läuft er ab, fragt die App nach einem neuen.</p>
   </div>
@@ -111,10 +119,30 @@ dl{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;margin:0;font-size:.
   </div>
   <div class="box">
     <h2>Zugang und Speicher</h2>
-    <div class="row"><button class="btn sec" id="tokChange">Token ändern</button><button class="btn sec" id="clearCache">Gespeicherte Daten löschen</button></div>
+    <div class="row"><button class="btn sec" id="qrShare">Token per QR-Code teilen</button><button class="btn sec" id="tokChange">Token ändern</button><button class="btn sec" id="clearCache">Gespeicherte Daten löschen</button></div>
     <div class="msg" id="clrMsg"></div>
   </div>
 </main>
+
+<div id="scan" class="ov" hidden><div class="ovc">
+  <h2>QR-Code scannen</h2>
+  <p class="small">Halte die Kamera auf den QR-Code, den die Regelhilfe auf dem anderen Gerät anzeigt.</p>
+  <video id="scanVideo" playsinline muted></video>
+  <div class="msg" id="scanMsg"></div>
+  <div class="row"><button class="btn sec" id="scanClose">Abbrechen</button></div>
+</div></div>
+<div id="share" class="ov" hidden><div class="ovc">
+  <h2>Token teilen</h2>
+  <p>Auf dem anderen Gerät die Regelhilfe öffnen, beim Einrichten „QR-Code scannen“ tippen und diesen Code scannen.</p>
+  <div class="warn">Der Code enthält deinen GitHub-Token. Er darf nur lesen, gibt aber Zugriff auf das private Repo. Zeig ihn nur auf deinen eigenen Geräten und nicht in Fotos oder Bildschirmfotos.</div>
+  <div id="qrHide" class="row"><button class="btn" id="qrReveal">QR-Code anzeigen</button></div>
+  <div id="qrBox" hidden>
+    <div class="qrwrap"><canvas id="qrCanvas"></canvas></div>
+    <p class="small">Mit der normalen Kamera-App öffnet der Code die Regelhilfe im Browser (Safari). Eine Regelhilfe auf dem Home-Bildschirm oder in einem anderen Browser hat eigenen Speicher – dort besser in der App scannen.</p>
+  </div>
+  <div class="row"><button class="btn sec" id="qrCopy">Link kopieren</button><button class="btn sec" id="qrSend" hidden>Link senden …</button><button class="btn sec" id="shareClose">Schließen</button></div>
+  <div class="msg" id="shareMsg"></div>
+</div></div>
 
 <div id="view" hidden><iframe id="fr" title="Spielhilfe"></iframe><button id="back">◂ Spiele</button></div>
 <div id="loading" hidden><div class="spin"></div><span id="loadTxt">Lade …</span></div>
@@ -123,7 +151,7 @@ dl{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;margin:0;font-size:.
 
 <script>
 "use strict";
-const APP_VERSION = "1.0.1";
+const APP_VERSION = "1.1.0";
 const OWNER = "nechromus", REPO = "RulesHelperData", BRANCH = "main", API = "https://api.github.com";
 const $ = id => document.getElementById(id);
 
@@ -380,10 +408,91 @@ function applyApp() {
 }
 
 /* ---------- Einrichtung und Einstellungen ---------- */
+function extractToken(s) {
+  s = String(s || "").trim();
+  const m = s.match(/[#?&]token=([^&#\s]+)/);
+  if (m) { try { return decodeURIComponent(m[1]); } catch (e) { return m[1]; } }
+  return s;
+}
+const scripts = {};
+function loadScript(src) {
+  return scripts[src] || (scripts[src] = new Promise((res, rej) => {
+    const el = document.createElement("script"); el.src = src; el.onload = res;
+    el.onerror = () => { delete scripts[src]; rej(new Error("Bibliothek nicht ladbar")); }; document.head.appendChild(el);
+  }));
+}
+const shareLink = () => location.origin + location.pathname + "#token=" + encodeURIComponent(TOKEN);
+
+/* QR-Code mit dem Token zeigen */
+$("qrShare").addEventListener("click", () => {
+  $("shareMsg").textContent = ""; $("qrBox").hidden = true; $("qrHide").hidden = false;
+  $("qrSend").hidden = !navigator.share; $("share").hidden = false;
+});
+$("qrReveal").addEventListener("click", async () => {
+  try {
+    await loadScript("lib/qrcode.js");
+    const q = qrcode(0, "M"); q.addData(shareLink()); q.make();
+    const n = q.getModuleCount(), quiet = 4, cell = Math.max(4, Math.floor(640 / (n + 2 * quiet)));
+    const c = $("qrCanvas"), size = (n + 2 * quiet) * cell; c.width = c.height = size;
+    const x = c.getContext("2d"); x.fillStyle = "#fff"; x.fillRect(0, 0, size, size); x.fillStyle = "#000";
+    for (let r = 0; r < n; r++) for (let k = 0; k < n; k++) if (q.isDark(r, k)) x.fillRect((k + quiet) * cell, (r + quiet) * cell, cell, cell);
+    $("qrHide").hidden = true; $("qrBox").hidden = false;
+  } catch (e) { $("shareMsg").className = "msg bad"; $("shareMsg").textContent = "QR-Code konnte nicht erzeugt werden (" + e.message + ")."; }
+});
+$("qrCopy").addEventListener("click", async () => {
+  const m = $("shareMsg"); m.className = "msg";
+  try { await navigator.clipboard.writeText(shareLink()); m.textContent = "Link kopiert. Auf dem anderen Gerät in das Token-Feld einfügen."; }
+  catch (e) { m.className = "msg bad"; m.textContent = "Kopieren nicht möglich."; }
+});
+$("qrSend").addEventListener("click", () => { navigator.share({ title: "Regelhilfe-Zugang", url: shareLink() }).catch(() => {}); });
+function closeShare() { $("share").hidden = true; $("qrBox").hidden = true; const c = $("qrCanvas"); c.width = c.height = 0; }
+$("shareClose").addEventListener("click", closeShare);
+
+/* QR-Code scannen */
+let scanStream = null, scanRun = 0;
+function stopScan() {
+  scanRun++; if (scanStream) { scanStream.getTracks().forEach(t => t.stop()); scanStream = null; }
+  $("scanVideo").srcObject = null; $("scan").hidden = true;
+}
+$("scanClose").addEventListener("click", stopScan);
+$("qrScan").addEventListener("click", async () => {
+  const m = $("scanMsg"), v = $("scanVideo"); m.className = "msg"; m.textContent = "Starte Kamera …"; $("scan").hidden = false;
+  const my = ++scanRun;
+  try {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw new Error("nocam");
+    const [stream] = await Promise.all([navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" }, audio: false }), loadScript("lib/jsQR.js")]);
+    if (my !== scanRun) { stream.getTracks().forEach(t => t.stop()); return; }
+    scanStream = stream; v.srcObject = stream; await v.play(); m.textContent = "Suche QR-Code …";
+    const c = document.createElement("canvas"), x = c.getContext("2d", { willReadFrequently: true });
+    const tick = () => {
+      if (my !== scanRun) return;
+      if (v.readyState >= 2 && v.videoWidth) {
+        const k = Math.min(1, 720 / Math.max(v.videoWidth, v.videoHeight));
+        c.width = Math.round(v.videoWidth * k); c.height = Math.round(v.videoHeight * k);
+        x.drawImage(v, 0, 0, c.width, c.height);
+        const code = jsQR(x.getImageData(0, 0, c.width, c.height).data, c.width, c.height, { inversionAttempts: "dontInvert" });
+        if (code && code.data) {
+          const t = extractToken(code.data);
+          if (/token=/.test(code.data) || /^(github_pat_|ghp_)/.test(t)) { stopScan(); $("tok").value = t; $("tokSave").click(); return; }
+          m.textContent = "Das ist kein Regelhilfe-Code.";
+        }
+      }
+      setTimeout(() => requestAnimationFrame(tick), 120);
+    };
+    tick();
+  } catch (e) {
+    if (my !== scanRun) return;
+    m.className = "msg bad";
+    m.textContent = e.name === "NotAllowedError" ? "Kein Kamerazugriff erlaubt. Bitte in den Einstellungen des Browsers erlauben oder den Link einfügen."
+      : e.message === "nocam" || e.name === "NotFoundError" ? "Hier ist keine Kamera verfügbar. Kopiere den Link auf dem anderen Gerät und füge ihn ins Token-Feld ein."
+      : "Kamera konnte nicht gestartet werden (" + (e.message || e.name) + ").";
+    if (scanStream) { scanStream.getTracks().forEach(t => t.stop()); scanStream = null; }
+  }
+});
 function openSetup(canCancel) { $("tok").value = ""; $("tokMsg").textContent = ""; $("tokCancel").hidden = !canCancel; show("setup"); setTimeout(() => $("tok").focus(), 50); }
 $("tokCancel").addEventListener("click", () => show("home"));
 $("tokSave").addEventListener("click", async () => {
-  const v = $("tok").value.trim(), m = $("tokMsg"); m.className = "msg";
+  const v = extractToken($("tok").value), m = $("tokMsg"); m.className = "msg"; $("tok").value = v;
   if (!v) { m.textContent = "Bitte den Token einfügen."; m.className = "msg bad"; return; }
   const old = TOKEN; TOKEN = v; $("tokSave").disabled = true; m.textContent = "Prüfe Zugriff …";
   try {
@@ -450,6 +559,12 @@ async function wake() {
 async function start() {
   if (!TOKEN) { const t = await iget("meta", "token"); if (t) { TOKEN = t; LS.set("rh-token", t); } }
   await loadState();
+  if (/^#token=/.test(location.hash)) {          // geteilter Link: Token übernehmen, Link sofort aus der Adresse entfernen
+    const t = extractToken(location.hash);
+    try { history.replaceState(null, "", location.pathname); } catch (e) {}
+    if (t && t !== TOKEN) { openSetup(!!TOKEN); $("tok").value = t; checkApp(); $("tokSave").click(); return; }
+    if (t) toast("Dieser Token ist schon eingerichtet.");
+  }
   if (!TOKEN) { openSetup(false); checkApp(); return; }
   show("home"); renderStatus();
   if (state.tree) { try { await loadGames(); renderGrid(); } catch (e) {} }
