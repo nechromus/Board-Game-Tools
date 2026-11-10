@@ -28,6 +28,18 @@ h2{font-weight:600;margin:0 0 12px;font-size:1.4rem}
 .iconbtn:hover,.iconbtn:focus-visible{border-color:var(--acc);outline:none}
 #grid{list-style:none;padding:0;margin:0;display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(160px,1fr))}
 @media (min-width:700px){#grid{grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:18px}}
+#tools{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:0 0 16px}
+#q{flex:1 1 220px;min-width:0;font:16px Georgia,serif;padding:10px 14px;border-radius:22px;border:1px solid var(--line);background:#14161b;color:var(--fg);-webkit-appearance:none;appearance:none}
+#q::placeholder{color:var(--muted)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:22px;overflow:hidden;background:var(--card);flex:none}
+.seg button{background:transparent;border:0;padding:9px 16px;font-size:.95rem;color:var(--muted);min-height:42px}
+.seg button[aria-pressed="true"]{background:var(--acc);color:#1d2027;font-weight:700}
+.seg button:focus-visible{outline:2px solid var(--acc);outline-offset:-2px}
+#grid li{position:relative;min-width:0}
+.fav{position:absolute;left:6px;top:6px;z-index:2;width:40px;height:40px;border-radius:50%;border:1px solid var(--line);background:rgba(20,22,27,.78);color:var(--muted);font-size:1.25rem;line-height:1;display:flex;align-items:center;justify-content:center;padding:0}
+.fav[aria-pressed="true"]{color:var(--acc);border-color:var(--acc)}
+.fav:focus-visible{outline:2px solid var(--acc);outline-offset:1px}
+#empty{color:var(--muted);margin:8px 0 0}
 .tile{width:100%;padding:0;background:var(--card);border:1px solid var(--line);border-radius:8px;overflow:hidden;text-align:left;display:flex;flex-direction:column;height:100%;transition:transform .12s,border-color .12s}
 .tile:hover,.tile:focus-visible{border-color:var(--acc);outline:none;transform:translateY(-2px)}
 .tile:active{transform:scale(.98)}
@@ -80,7 +92,12 @@ html.viewing,html.viewing body{overflow:hidden;height:100%;overscroll-behavior:n
 <main id="home" class="page" hidden>
   <header><h1>Regelhilfe</h1><button class="iconbtn" id="gear" aria-label="Einstellungen">⚙︎ Einstellungen</button></header>
   <p class="lead" id="status"></p>
+  <div id="tools">
+    <input type="search" id="q" placeholder="Spiel suchen …" aria-label="Spiel suchen" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="search">
+    <div class="seg" role="group" aria-label="Ansicht"><button type="button" id="vAll" aria-pressed="true">Alle</button><button type="button" id="vFav" aria-pressed="false">★ Favoriten</button></div>
+  </div>
   <ul id="grid"></ul>
+  <p id="empty" hidden></p>
 </main>
 
 <main id="setup" class="page" hidden>
@@ -153,7 +170,7 @@ html.viewing,html.viewing body{overflow:hidden;height:100%;overscroll-behavior:n
 
 <script>
 "use strict";
-const APP_VERSION = "1.3.0";
+const APP_VERSION = "1.4.0";
 const OWNER = "nechromus", REPO = "RulesHelperData", BRANCH = "main", API = "https://api.github.com";
 const $ = id => document.getElementById(id);
 
@@ -314,15 +331,50 @@ function renderGrid() {
   const g = $("grid");
   const key = games.map(x => x.slug + (state.tree ? state.tree[x.cover] : "") + offlineReady(x.slug)).join("|");
   if (key === gridKey && g.children.length) return; gridKey = key;
-  g.innerHTML = games.map(x => `<li><button class="tile" data-slug="${esc(x.slug)}">
+  g.innerHTML = games.map(x => `<li data-slug="${esc(x.slug)}">${favBtn(x.slug, x.name)}<button class="tile" data-slug="${esc(x.slug)}">
     <div class="cv"><img alt="" data-cover="${esc(x.cover || "")}"><div class="ph">${esc(x.name)}</div>${offlineReady(x.slug) ? '<span class="badge on">offline ✓</span>' : ""}</div>
     <div class="tx"><span class="nm">${esc(x.name)}</span><span class="mt">${esc(x.meta || "")}</span></div></button></li>`).join("");
   for (const img of g.querySelectorAll("img[data-cover]")) {
     const p = img.dataset.cover; if (!p) continue;
     objURL(p).then(u => { img.onload = () => img.classList.add("ok"); img.src = u; }).catch(() => {});
   }
+  applyFilter();
 }
-$("grid").addEventListener("click", e => { const b = e.target.closest(".tile"); if (b) openGame(b.dataset.slug, true); });
+/* ---------- Suche und Favoriten ---------- */
+let favs = new Set(); try { favs = new Set(JSON.parse(LS.get("rh-favs") || "[]")); } catch (e) {}
+let favView = LS.get("rh-view") === "fav";
+const norm = t => String(t || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/ø/g, "o").replace(/ß/g, "ss");
+function favBtn(slug, name) { const on = favs.has(slug); return `<button type="button" class="fav" data-fav="${esc(slug)}" aria-pressed="${on}" aria-label="${esc(name)} ${on ? "aus Favoriten entfernen" : "als Favorit markieren"}">${on ? "★" : "☆"}</button>`; }
+function applyFilter() {
+  const q = norm($("q").value.trim()); let n = 0;
+  for (const li of $("grid").children) {
+    const g = games.find(x => x.slug === li.dataset.slug); if (!g) continue;
+    const ok = (!favView || favs.has(g.slug)) && (!q || norm(g.name + " " + (g.meta || "")).includes(q));
+    li.hidden = !ok; if (ok) n++;
+  }
+  $("vAll").setAttribute("aria-pressed", String(!favView)); $("vFav").setAttribute("aria-pressed", String(favView));
+  $("vFav").textContent = "★ Favoriten" + (favs.size ? " (" + favs.size + ")" : "");
+  const e = $("empty");
+  if (n || !games.length) { e.hidden = true; return; }
+  e.hidden = false;
+  e.textContent = favView && !favs.size ? "Noch keine Favoriten. Tippe in der Ansicht „Alle“ auf ☆ an einem Cover."
+    : q ? "Kein Spiel gefunden für „" + $("q").value.trim() + "“." + (favView ? " Gesucht wurde nur in den Favoriten." : "") : "Keine Spiele in dieser Ansicht.";
+}
+function setView(fav) { favView = fav; LS.set("rh-view", fav ? "fav" : null); applyFilter(); }
+$("vAll").addEventListener("click", () => setView(false));
+$("vFav").addEventListener("click", () => setView(true));
+$("q").addEventListener("input", applyFilter);
+$("q").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); const v = [...$("grid").children].filter(li => !li.hidden); if (v.length === 1) openGame(v[0].dataset.slug, true); else $("q").blur(); } else if (e.key === "Escape") { $("q").value = ""; applyFilter(); } });
+$("grid").addEventListener("click", e => {
+  const f = e.target.closest(".fav");
+  if (f) {
+    const s = f.dataset.fav; favs.has(s) ? favs.delete(s) : favs.add(s);
+    LS.set("rh-favs", JSON.stringify([...favs]));
+    const g = games.find(x => x.slug === s); f.outerHTML = favBtn(s, g ? g.name : s);
+    applyFilter(); return;
+  }
+  const b = e.target.closest(".tile"); if (b) openGame(b.dataset.slug, true);
+});
 
 /* ---------- Spiel anzeigen ---------- */
 const SKEL = '<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover">'

@@ -6,3 +6,4 @@ Spielabend-Seiten für Brettspiel-Regelfragen: https://nechromus.github.io/Board
 - Alles Geladene liegt in IndexedDB, geordnet nach Git-Blob-SHA. Bei jedem Start, beim Zurückkehren in die App und alle 15 Minuten vergleicht sie den letzten Commit; geänderte Dateien werden automatisch nachgeladen, alte gelöscht. Ohne Netz läuft sie mit dem gespeicherten Stand.
 - Zugang auf weiteren Geräten: In den Einstellungen „Token per QR-Code teilen“, auf dem neuen Gerät beim Einrichten „QR-Code scannen“ (oder den geteilten Link `…/regelhilfe/#token=…` öffnen bzw. einfügen).
 - App-Updates: `python3 release.py <version>` erhöht die Nummer in `index.html`, `sw.js` und `version.json`. Die App merkt die neue `version.json` und lädt sich selbst neu.
+- Startseite: Suchfeld (Name und Beschreibung, Enter öffnet bei genau einem Treffer) und Favoriten (☆ am Cover). Umschalter „Alle“ / „★ Favoriten“. Favoriten und Ansicht bleiben pro Gerät gespeichert (localStorage).
