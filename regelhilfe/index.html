@@ -57,8 +57,10 @@ dl{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;margin:0;font-size:.
 #banner{position:fixed;left:50%;transform:translateX(-50%);top:calc(10px + env(safe-area-inset-top,0px));z-index:20;background:#2f3440;border:1px solid var(--acc);color:var(--fg);border-radius:20px;padding:8px 16px;font-size:.9rem;max-width:calc(100% - 24px);box-shadow:0 4px 18px rgba(0,0,0,.4)}
 #toast{position:fixed;left:50%;bottom:calc(64px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:21;background:#2f3440;color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:9px 14px;font-size:.9rem;max-width:calc(100% - 24px);opacity:0;pointer-events:none;transition:opacity .2s}
 #toast.show{opacity:1}
-#view{position:fixed;inset:0;background:#fff;z-index:10}
-#fr{border:0;width:100%;height:100%;display:block}
+#view{position:fixed;inset:0;background:var(--bg);z-index:10;overflow:hidden;display:flex;flex-direction:column;padding-top:env(safe-area-inset-top,0px)}
+/* iOS: iframes wachsen sonst auf die Breite ihres Inhalts */
+#fr{border:0;width:1px;min-width:100%;flex:1 1 auto;height:auto;min-height:0;display:block;background:#fff}
+html.viewing,html.viewing body{overflow:hidden;height:100%;overscroll-behavior:none}
 #back{position:fixed;left:max(10px,env(safe-area-inset-left,0px));bottom:calc(10px + env(safe-area-inset-bottom,0px));z-index:12;background:rgba(29,32,39,.88);color:var(--fg);border:1px solid var(--acc);border-radius:20px;padding:8px 14px;font:600 14px Georgia,serif}
 #loading{position:fixed;inset:0;z-index:11;display:flex;align-items:center;justify-content:center;background:var(--bg);color:var(--muted);font-size:1.05rem}
 .spin{width:22px;height:22px;border:3px solid var(--line);border-top-color:var(--acc);border-radius:50%;animation:sp 0.8s linear infinite;margin-right:12px}
@@ -151,7 +153,7 @@ dl{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;margin:0;font-size:.
 
 <script>
 "use strict";
-const APP_VERSION = "1.1.1";
+const APP_VERSION = "1.2.0";
 const OWNER = "nechromus", REPO = "RulesHelperData", BRANCH = "main", API = "https://api.github.com";
 const $ = id => document.getElementById(id);
 
@@ -324,7 +326,7 @@ $("grid").addEventListener("click", e => { const b = e.target.closest(".tile"); 
 
 /* ---------- Spiel anzeigen ---------- */
 const SKEL = '<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover">'
-  + '<style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}'
+  + '<style>html{-webkit-text-size-adjust:100%;text-size-adjust:100%}:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}'
   + 'html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}'
   + 'img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}.rh-wait{opacity:.5}</style>'
   /* Seitenbilder (data-src="rb/12.webp") kommen über die App aus GitHub bzw. dem Gerätespeicher */
@@ -336,6 +338,15 @@ const SKEL = '<!doctype html><html><head><meta charset=utf8><meta name=viewport 
   + 'Promise.all(need.map(function(x){return P.url(x.getAttribute("data-src")).then(function(u){x.setAttribute("data-src",u)})}))'
   + '.then(function(){b.classList.remove("rh-wait");b.click()},function(){b.classList.remove("rh-wait");P.toast("Seitenbild nicht verfügbar – offline?")})'
   + '},true)})();<\/script></head><body>\n';
+/* „Fit“: Der obere Abstand (Platz für die Seitenleiste) wird beim Verkleinern mitskaliert und
+   rutscht dann unter die Leiste. Hier wird er gegengerechnet, damit er immer gleich groß bleibt. */
+const FITFIX = '<script>(function(){if(typeof fitPage!=="function")return;var orig=fitPage;'
+  + 'window.fitPage=function(el){orig(el);var sc=el.firstElementChild;if(!sc||!sc.classList.contains("fit")||!/scale/.test(sc.style.transform))return;'
+  + 'sc.style.transform="";sc.style.paddingTop="";sc.style.paddingBottom="";var cs=getComputedStyle(sc),T=parseFloat(cs.paddingTop)||0,B=parseFloat(cs.paddingBottom)||0;'
+  + 'var avail=el.clientHeight,W=el.clientWidth;var fits=function(s){sc.style.width=(W/s)+"px";sc.style.paddingTop=(T/s)+"px";sc.style.paddingBottom=(B/s)+"px";return sc.offsetHeight*s<=avail};'
+  + 'var lo=.5,hi=1;for(var i=0;i<10;i++){var m=(lo+hi)/2;if(fits(m))lo=m;else hi=m}'
+  + 'fits(lo);sc.style.transformOrigin="0 0";sc.style.transform="scale("+lo+")";el.classList.toggle("fitted",sc.offsetHeight*lo<=avail)};'
+  + 'try{fitAll();go(cur,false)}catch(e){}})();<\/script>';
 let current = null, currentSha = null, openToken = 0;
 window.RH = { url: p => objURL(`games/${current}/pub/${p}`), toast };
 
@@ -348,8 +359,8 @@ async function openGame(slug, push) {
     const html = await getText(path);
     if (my !== openToken) return;
     current = slug; currentSha = state.tree[path];
-    $("fr").srcdoc = SKEL + html + "\n</body></html>";
-    $("view").hidden = false; document.title = g.name + " – Regelhilfe";
+    $("fr").srcdoc = SKEL + html + FITFIX + "\n</body></html>";
+    $("view").hidden = false; document.documentElement.classList.add("viewing"); window.scrollTo(0, 0); document.title = g.name + " – Regelhilfe";
     if (push) { try { history.pushState({ g: slug }, "", "#" + slug); } catch (e) {} }
     setTimeout(() => { if (current === slug) prefetchGame(slug).catch(() => {}); }, 2500);
   } catch (e) {
@@ -358,6 +369,7 @@ async function openGame(slug, push) {
   } finally { if (my === openToken) $("loading").hidden = true; }
 }
 function closeGame() {
+  document.documentElement.classList.remove("viewing");
   openToken++; current = null; currentSha = null;
   $("view").hidden = true; $("fr").removeAttribute("srcdoc"); $("fr").src = "about:blank";
   document.title = "Regelhilfe"; banner(null);
