@@ -1,8 +1,8 @@
 // Regelhilfe: Offline-Kopie der App selbst. Die Spieldaten speichert die Seite in IndexedDB.
 // Bei jeder neuen App-Version wird VERSION erhöht, damit der Browser den Service Worker erneuert.
-const VERSION = '1.0.0';
+const VERSION = '1.0.1';
 const CACHE = 'regelhilfe-' + VERSION;
-const CORE = ['./', 'index.html', 'manifest.webmanifest', 'apple-touch-icon.png', 'icon-192.png', 'icon-512.png'];
+const CORE = ['./', 'index.html', 'manifest.webmanifest', 'apple-touch-icon.png', 'icon-192.png', 'icon-512.png', 'favicon.png'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(CORE.map(u => new Request(u, { cache: 'reload' })))).then(() => self.skipWaiting()));
