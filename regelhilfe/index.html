@@ -1,0 +1,470 @@
+<!doctype html>
+<html lang="de"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Regelhilfe">
+<meta name="theme-color" content="#1d2027">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="icon-192.png">
+<title>Regelhilfe</title>
+<style>
+:root{--bg:#1d2027;--card:#272b34;--line:#3a3f4b;--fg:#ece7dc;--muted:#a49f92;--acc:#d2a85a;--bad:#e07a62;color-scheme:dark}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--fg);font:16px/1.45 Georgia,"Times New Roman",serif;-webkit-text-size-adjust:100%}
+button{font:inherit;color:inherit;cursor:pointer}
+a{color:var(--acc)}
+[hidden]{display:none!important}
+.page{min-height:100%;padding:calc(20px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) calc(32px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));max-width:1100px;margin:0 auto}
+header{display:flex;align-items:center;gap:12px}
+h1{font-weight:600;letter-spacing:.04em;margin:0;font-size:1.9rem;flex:1}
+h2{font-weight:600;margin:0 0 12px;font-size:1.4rem}
+.lead{color:var(--muted);margin:4px 0 18px;font-size:.92rem;min-height:1.3em}
+.iconbtn{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:7px 14px;font-size:.95rem}
+.iconbtn:hover,.iconbtn:focus-visible{border-color:var(--acc);outline:none}
+#grid{list-style:none;padding:0;margin:0;display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(160px,1fr))}
+@media (min-width:700px){#grid{grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:18px}}
+.tile{width:100%;padding:0;background:var(--card);border:1px solid var(--line);border-radius:8px;overflow:hidden;text-align:left;display:flex;flex-direction:column;height:100%;transition:transform .12s,border-color .12s}
+.tile:hover,.tile:focus-visible{border-color:var(--acc);outline:none;transform:translateY(-2px)}
+.tile:active{transform:scale(.98)}
+.cv{position:relative;aspect-ratio:4/5;background:#14161b;overflow:hidden}
+.cv img{width:100%;height:100%;object-fit:cover;object-position:top center;display:block;opacity:0;transition:opacity .25s}
+.cv img.ok{opacity:1}
+.cv .ph{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:12px;text-align:center;color:var(--muted);font-size:1.1rem}
+.cv img.ok+.ph{display:none}
+.badge{position:absolute;right:6px;bottom:6px;background:rgba(20,22,27,.85);border:1px solid var(--line);color:var(--muted);font:600 11px -apple-system,BlinkMacSystemFont,sans-serif;padding:2px 7px;border-radius:10px}
+.badge.on{color:#9fd39a;border-color:#4d6b4a}
+.tx{padding:10px 12px 12px;display:flex;flex-direction:column;gap:2px;border-top:3px solid var(--acc)}
+.nm{font-size:1.05rem;font-weight:700;line-height:1.25}
+.mt{color:var(--muted);font-size:.8rem;line-height:1.3}
+.box{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:16px 18px;margin:0 0 16px;max-width:720px}
+.box ol{padding-left:22px;margin:8px 0}.box li{margin:4px 0}
+.box p{margin:6px 0}
+.small{font-size:.85rem;color:var(--muted)}
+input[type=password],input[type=text]{width:100%;font:15px ui-monospace,Menlo,monospace;padding:11px 12px;border-radius:6px;border:1px solid var(--line);background:#14161b;color:var(--fg)}
+input:focus{outline:2px solid var(--acc);outline-offset:1px}
+.row{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+.btn{background:var(--acc);color:#1d2027;border:0;border-radius:6px;padding:10px 16px;font-weight:700}
+.btn.sec{background:transparent;color:var(--fg);border:1px solid var(--line);font-weight:400}
+.btn:disabled{opacity:.5}
+.msg{margin-top:10px;min-height:1.2em;font-size:.92rem}
+.msg.bad{color:var(--bad)}
+dl{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;margin:0;font-size:.95rem}dt{color:var(--muted)}dd{margin:0}
+#banner{position:fixed;left:50%;transform:translateX(-50%);top:calc(10px + env(safe-area-inset-top,0px));z-index:20;background:#2f3440;border:1px solid var(--acc);color:var(--fg);border-radius:20px;padding:8px 16px;font-size:.9rem;max-width:calc(100% - 24px);box-shadow:0 4px 18px rgba(0,0,0,.4)}
+#toast{position:fixed;left:50%;bottom:calc(64px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:21;background:#2f3440;color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:9px 14px;font-size:.9rem;max-width:calc(100% - 24px);opacity:0;pointer-events:none;transition:opacity .2s}
+#toast.show{opacity:1}
+#view{position:fixed;inset:0;background:#fff;z-index:10}
+#fr{border:0;width:100%;height:100%;display:block}
+#back{position:fixed;left:max(10px,env(safe-area-inset-left,0px));bottom:calc(10px + env(safe-area-inset-bottom,0px));z-index:12;background:rgba(29,32,39,.88);color:var(--fg);border:1px solid var(--acc);border-radius:20px;padding:8px 14px;font:600 14px Georgia,serif}
+#loading{position:fixed;inset:0;z-index:11;display:flex;align-items:center;justify-content:center;background:var(--bg);color:var(--muted);font-size:1.05rem}
+.spin{width:22px;height:22px;border:3px solid var(--line);border-top-color:var(--acc);border-radius:50%;animation:sp 0.8s linear infinite;margin-right:12px}
+@keyframes sp{to{transform:rotate(360deg)}}
+.prog{height:6px;background:#14161b;border-radius:3px;overflow:hidden;margin-top:10px}.prog i{display:block;height:100%;width:0;background:var(--acc);transition:width .2s}
+</style>
+</head>
+<body>
+
+<main id="home" class="page" hidden>
+  <header><h1>Regelhilfe</h1><button class="iconbtn" id="gear" aria-label="Einstellungen">⚙︎ Einstellungen</button></header>
+  <p class="lead" id="status"></p>
+  <ul id="grid"></ul>
+</main>
+
+<main id="setup" class="page" hidden>
+  <header><h1>Regelhilfe</h1></header>
+  <p class="lead">Einmalige Einrichtung auf diesem Gerät</p>
+  <div class="box">
+    <h2>Lese-Token eintragen</h2>
+    <p>Die Spielhilfen liegen im privaten Repository <b>nechromus/RulesHelperData</b>. Für den Zugriff braucht die App einen Token, der nur lesen darf:</p>
+    <ol>
+      <li>Auf GitHub <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">einen neuen Fine-grained token anlegen</a> (Settings → Developer settings → Personal access tokens → Fine-grained tokens).</li>
+      <li><b>Repository access:</b> „Only select repositories“ → <b>RulesHelperData</b>.</li>
+      <li><b>Permissions → Repository permissions → Contents:</b> „Read-only“. Mehr braucht es nicht.</li>
+      <li>Ablaufdatum wählen, Token erzeugen, kopieren und hier einfügen.</li>
+    </ol>
+    <input type="password" id="tok" placeholder="github_pat_…" autocomplete="off" autocapitalize="off" spellcheck="false">
+    <div class="row"><button class="btn" id="tokSave">Speichern und prüfen</button><button class="btn sec" id="tokCancel" hidden>Abbrechen</button></div>
+    <div class="msg" id="tokMsg"></div>
+    <p class="small">Der Token wird nur auf diesem Gerät gespeichert und nur an api.github.com geschickt. Läuft er ab, fragt die App nach einem neuen.</p>
+  </div>
+</main>
+
+<main id="settings" class="page" hidden>
+  <header><h1>Einstellungen</h1><button class="iconbtn" id="setBack">◂ Spiele</button></header>
+  <p class="lead">&nbsp;</p>
+  <div class="box">
+    <h2>Stand</h2>
+    <dl id="info"></dl>
+    <div class="row"><button class="btn" id="chkNow">Jetzt nach Updates suchen</button></div>
+    <div class="msg" id="chkMsg"></div>
+  </div>
+  <div class="box">
+    <h2>Offline</h2>
+    <p>Geöffnete Spiele werden samt Seitenbildern auf dem Gerät gespeichert und bei neuen Fassungen automatisch aktualisiert. Hier kannst du alle Spiele auf einmal laden, z. B. vor einem Spieleabend ohne WLAN.</p>
+    <div class="row"><button class="btn" id="allOff">Alle Spiele offline speichern</button></div>
+    <div class="prog" id="prog" hidden><i></i></div>
+    <div class="msg" id="offMsg"></div>
+  </div>
+  <div class="box">
+    <h2>Zugang und Speicher</h2>
+    <div class="row"><button class="btn sec" id="tokChange">Token ändern</button><button class="btn sec" id="clearCache">Gespeicherte Daten löschen</button></div>
+    <div class="msg" id="clrMsg"></div>
+  </div>
+</main>
+
+<div id="view" hidden><iframe id="fr" title="Spielhilfe"></iframe><button id="back">◂ Spiele</button></div>
+<div id="loading" hidden><div class="spin"></div><span id="loadTxt">Lade …</span></div>
+<div id="banner" hidden></div>
+<div id="toast"></div>
+
+<script>
+"use strict";
+const APP_VERSION = "1.0.0";
+const OWNER = "nechromus", REPO = "RulesHelperData", BRANCH = "main", API = "https://api.github.com";
+const $ = id => document.getElementById(id);
+
+/* ---------- kleine Helfer ---------- */
+const LS = {
+  get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+  set(k, v) { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch (e) {} }
+};
+let toastT;
+function toast(t, ms) { const el = $("toast"); el.textContent = t; el.classList.add("show"); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove("show"), ms || 3200); }
+function banner(t, onClick) {
+  const b = $("banner"); if (!t) { b.hidden = true; b.onclick = null; return; }
+  b.textContent = t; b.hidden = false; b.style.cursor = onClick ? "pointer" : "default"; b.onclick = onClick || null;
+}
+function esc(s) { return String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
+function show(id) { for (const x of ["home", "setup", "settings"]) $(x).hidden = x !== id; }
+const MIME = { webp: "image/webp", png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", svg: "image/svg+xml", html: "text/html", json: "application/json", css: "text/css", js: "text/javascript" };
+const mime = p => MIME[(p.split(".").pop() || "").toLowerCase()] || "application/octet-stream";
+
+/* ---------- Speicher auf dem Gerät (IndexedDB, Rückfall: Arbeitsspeicher) ---------- */
+let dbp = null;
+function db() {
+  if (!dbp) dbp = new Promise(res => {
+    let r; try { r = indexedDB.open("regelhilfe", 1); } catch (e) { return res(null); }
+    r.onupgradeneeded = () => { const d = r.result; d.createObjectStore("blobs"); d.createObjectStore("meta"); };
+    r.onsuccess = () => res(r.result); r.onerror = () => res(null); r.onblocked = () => res(null);
+  });
+  return dbp;
+}
+async function idb(store, mode, fn) {
+  const d = await db(); if (!d) return undefined;
+  return new Promise((res, rej) => {
+    let out; const t = d.transaction(store, mode); const r = fn(t.objectStore(store));
+    if (r) r.onsuccess = () => { out = r.result; };
+    t.oncomplete = () => res(out); t.onerror = t.onabort = () => rej(t.error);
+  });
+}
+const iget = (st, k) => idb(st, "readonly", s => s.get(k)).catch(() => undefined);
+const iput = (st, k, v) => idb(st, "readwrite", s => s.put(v, k)).then(() => true, () => false);
+const idel = (st, k) => idb(st, "readwrite", s => s.delete(k)).catch(() => {});
+const ikeys = st => idb(st, "readonly", s => s.getAllKeys()).then(x => x || [], () => []);
+const mem = new Map();          // sha -> {t,b}, wenn IndexedDB fehlt oder voll ist
+const have = new Set();         // shas, die auf dem Gerät liegen
+
+/* ---------- GitHub ---------- */
+let TOKEN = LS.get("rh-token") || "";
+async function api(path, accept) {
+  const r = await fetch(API + path, { headers: { Authorization: "Bearer " + TOKEN, Accept: accept || "application/vnd.github+json" }, cache: "no-store" });
+  if (!r.ok) { const e = new Error("HTTP " + r.status); e.status = r.status; throw e; }
+  return r;
+}
+
+/* state: commit, date, tree {path: sha}, cached {path: 1} */
+let state = { commit: null, date: null, tree: null, cached: {} };
+let online = null, authProblem = null, lastCheck = 0;
+async function loadState() {
+  let s = await iget("meta", "state");
+  if (!s) { try { s = JSON.parse(LS.get("rh-state") || "null"); } catch (e) {} }
+  if (s && s.tree) state = Object.assign({ cached: {} }, s);
+  for (const k of await ikeys("blobs")) have.add(k);
+}
+let saveT;
+function saveState(now) {
+  clearTimeout(saveT);
+  const go = async () => { if (!(await iput("meta", "state", state))) LS.set("rh-state", JSON.stringify(state)); };
+  if (now) return go(); saveT = setTimeout(go, 800);
+}
+
+let checking = null;
+function checkData() {
+  if (checking) return checking;
+  checking = (async () => {
+    try {
+      const b = await (await api(`/repos/${OWNER}/${REPO}/branches/${BRANCH}`)).json();
+      online = true; authProblem = null; lastCheck = Date.now();
+      if (b.commit.sha === state.commit && state.tree) return false;
+      const t = await (await api(`/repos/${OWNER}/${REPO}/git/trees/${b.commit.commit.tree.sha}?recursive=1`)).json();
+      const tree = {};
+      for (const e of t.tree) if (e.type === "blob" && (e.path === "games.json" || /^games\/[^/]+\/(cover\.webp$|pub\/)/.test(e.path))) tree[e.path] = e.sha;
+      const old = state.tree;
+      state = { commit: b.commit.sha, date: b.commit.commit.committer.date, tree, cached: state.cached || {} };
+      await saveState(true);
+      if (old) dataChanged(old);
+      setTimeout(refreshCached, 500);
+      return true;
+    } catch (e) {
+      if (e.status === 401) authProblem = "Der Token ist ungültig oder abgelaufen.";
+      else if (e.status === 403 || e.status === 404) authProblem = e.status === 403 && /rate/i.test(e.message) ? null : "Der Token hat keinen Lesezugriff auf RulesHelperData.";
+      else online = false;
+      throw e;
+    } finally { checking = null; }
+  })();
+  return checking;
+}
+
+async function getRec(path) {
+  const sha = state.tree && state.tree[path];
+  if (!sha) { const e = new Error("Nicht im Datenstand: " + path); e.missing = true; throw e; }
+  let rec = mem.get(sha) || (have.has(sha) ? await iget("blobs", sha) : undefined);
+  if (!rec) {
+    const r = await api(`/repos/${OWNER}/${REPO}/git/blobs/${sha}`, "application/vnd.github.raw+json");
+    rec = { t: mime(path), b: await r.arrayBuffer() };
+    if (await iput("blobs", sha, rec)) have.add(sha); else mem.set(sha, rec);
+  }
+  if (!state.cached[path]) { state.cached[path] = 1; saveState(); }
+  return rec;
+}
+const getBlob = async p => { const r = await getRec(p); return new Blob([r.b], { type: r.t }); };
+const getText = async p => new TextDecoder().decode((await getRec(p)).b);
+const isLocal = p => { const s = state.tree && state.tree[p]; return !!s && (have.has(s) || mem.has(s)); };
+
+async function pool(items, n, fn, onStep) {
+  let i = 0, done = 0;
+  const run = async () => { while (i < items.length) { const it = items[i++]; try { await fn(it); } catch (e) { if (e.status === 401 || e.status === 403) throw e; } done++; onStep && onStep(done, items.length); } };
+  await Promise.all(Array.from({ length: Math.min(n, items.length) }, run));
+}
+/* Alles, was schon einmal geladen war, in der neuen Fassung nachladen; Altes löschen */
+let refreshing = false;
+async function refreshCached() {
+  if (refreshing || !state.tree) return; refreshing = true;
+  try {
+    const todo = Object.keys(state.cached).filter(p => state.tree[p] && !isLocal(p));
+    for (const p of Object.keys(state.cached)) if (!state.tree[p]) delete state.cached[p];
+    await pool(todo, 3, getRec);
+    const keep = new Set(Object.values(state.tree));
+    for (const k of [...have]) if (!keep.has(k)) { await idel("blobs", k); have.delete(k); }
+    for (const k of [...mem.keys()]) if (!keep.has(k)) mem.delete(k);
+    saveState(); renderGrid();
+  } catch (e) {} finally { refreshing = false; }
+}
+function gameFiles(slug) { const pre = `games/${slug}/`; return Object.keys(state.tree || {}).filter(p => p.startsWith(pre)); }
+function offlineReady(slug) { const f = gameFiles(slug); return f.length > 0 && f.every(isLocal); }
+async function prefetchGame(slug) { await pool(gameFiles(slug).filter(p => !isLocal(p)), 2, getRec); renderGrid(); }
+
+/* ---------- Übersicht ---------- */
+let games = [];
+const urls = new Map();   // path -> objectURL
+async function objURL(path) {
+  const sha = state.tree && state.tree[path], key = path + "@" + sha;
+  if (urls.has(key)) return urls.get(key);
+  const u = URL.createObjectURL(await getBlob(path)); urls.set(key, u); return u;
+}
+async function loadGames() {
+  try { games = JSON.parse(await getText("games.json")); } catch (e) { if (!games.length) throw e; }
+}
+function fmtDate(d) { try { return new Date(d).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" }); } catch (e) { return d; } }
+function renderStatus() {
+  const parts = [];
+  if (state.date) parts.push("Datenstand " + fmtDate(state.date));
+  if (online === false) parts.push("offline – gespeicherte Daten");
+  else if (checking) parts.push("suche nach Updates …");
+  $("status").textContent = parts.join(" · ");
+  if (authProblem) banner(authProblem + " Tippen, um einen neuen Token einzutragen.", () => { banner(null); openSetup(true); });
+}
+let gridKey = "";
+function renderGrid() {
+  renderStatus();
+  const g = $("grid");
+  const key = games.map(x => x.slug + (state.tree ? state.tree[x.cover] : "") + offlineReady(x.slug)).join("|");
+  if (key === gridKey && g.children.length) return; gridKey = key;
+  g.innerHTML = games.map(x => `<li><button class="tile" data-slug="${esc(x.slug)}">
+    <div class="cv"><img alt="" data-cover="${esc(x.cover || "")}"><div class="ph">${esc(x.name)}</div>${offlineReady(x.slug) ? '<span class="badge on">offline ✓</span>' : ""}</div>
+    <div class="tx"><span class="nm">${esc(x.name)}</span><span class="mt">${esc(x.meta || "")}</span></div></button></li>`).join("");
+  for (const img of g.querySelectorAll("img[data-cover]")) {
+    const p = img.dataset.cover; if (!p) continue;
+    objURL(p).then(u => { img.onload = () => img.classList.add("ok"); img.src = u; }).catch(() => {});
+  }
+}
+$("grid").addEventListener("click", e => { const b = e.target.closest(".tile"); if (b) openGame(b.dataset.slug, true); });
+
+/* ---------- Spiel anzeigen ---------- */
+const SKEL = '<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover">'
+  + '<style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}'
+  + 'html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}'
+  + 'img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}.rh-wait{opacity:.5}</style>'
+  /* Seitenbilder (data-src="rb/12.webp") kommen über die App aus GitHub bzw. dem Gerätespeicher */
+  + '<script>(function(){var P=parent.RH;document.addEventListener("click",function(e){'
+  + 'var b=e.target&&e.target.closest&&e.target.closest("[data-src]");if(!b)return;'
+  + 'var line=b.closest(".chipline")||b.parentNode;var els=[].slice.call(line.querySelectorAll("[data-src]"));'
+  + 'var need=els.filter(function(x){return!/^(data:|blob:|https?:)/.test(x.getAttribute("data-src"))});if(!need.length)return;'
+  + 'e.preventDefault();e.stopImmediatePropagation();if(b.classList.contains("rh-wait"))return;b.classList.add("rh-wait");'
+  + 'Promise.all(need.map(function(x){return P.url(x.getAttribute("data-src")).then(function(u){x.setAttribute("data-src",u)})}))'
+  + '.then(function(){b.classList.remove("rh-wait");b.click()},function(){b.classList.remove("rh-wait");P.toast("Seitenbild nicht verfügbar – offline?")})'
+  + '},true)})();<\/script></head><body>\n';
+let current = null, currentSha = null, openToken = 0;
+window.RH = { url: p => objURL(`games/${current}/pub/${p}`), toast };
+
+async function openGame(slug, push) {
+  const g = games.find(x => x.slug === slug); if (!g) return;
+  const my = ++openToken;
+  $("loadTxt").textContent = "Lade " + g.name + " …"; $("loading").hidden = false;
+  try {
+    const path = `games/${slug}/pub/index.html`;
+    const html = await getText(path);
+    if (my !== openToken) return;
+    current = slug; currentSha = state.tree[path];
+    $("fr").srcdoc = SKEL + html + "\n</body></html>";
+    $("view").hidden = false; document.title = g.name + " – Regelhilfe";
+    if (push) { try { history.pushState({ g: slug }, "", "#" + slug); } catch (e) {} }
+    setTimeout(() => { if (current === slug) prefetchGame(slug).catch(() => {}); }, 2500);
+  } catch (e) {
+    toast(e.missing ? "Diese Spielhilfe fehlt im Datenstand." : online === false ? "Offline – diese Spielhilfe ist noch nicht auf dem Gerät gespeichert." : "Laden fehlgeschlagen (" + e.message + ").", 4500);
+    if (!push) { try { history.replaceState(null, "", location.pathname + location.search); } catch (e) {} }
+  } finally { if (my === openToken) $("loading").hidden = true; }
+}
+function closeGame() {
+  openToken++; current = null; currentSha = null;
+  $("view").hidden = true; $("fr").removeAttribute("srcdoc"); $("fr").src = "about:blank";
+  document.title = "Regelhilfe"; banner(null);
+  renderGrid();
+  if (pendingApp) applyApp();
+}
+$("back").addEventListener("click", () => { if (history.state && history.state.g) history.back(); else { try { history.replaceState(null, "", location.pathname + location.search); } catch (e) {} closeGame(); } });
+window.addEventListener("popstate", () => { const h = decodeURIComponent(location.hash.slice(1)); if (h && games.some(x => x.slug === h)) { if (h !== current) openGame(h, false); } else if (current) closeGame(); });
+
+function dataChanged(old) {
+  gridKey = "";
+  loadGames().then(renderGrid).catch(() => {});
+  if (current) {
+    const p = `games/${current}/pub/index.html`;
+    if (state.tree[p] && state.tree[p] !== currentSha) {
+      const slug = current;
+      banner("Neue Fassung dieser Spielhilfe – tippen zum Neuladen", () => { banner(null); openGame(slug, false); });
+    }
+  } else toast("Spielhilfen aktualisiert");
+}
+
+/* ---------- App-Update ---------- */
+let pendingApp = null;
+async function checkApp() {
+  try {
+    const r = await fetch("version.json?t=" + Date.now(), { cache: "no-store" });
+    if (!r.ok) return;
+    const v = (await r.json()).version;
+    if (v && v !== APP_VERSION) {
+      pendingApp = v;
+      if (!current && $("setup").hidden) applyApp();
+      else if (current) banner("App-Update " + v + " wird beim Zurück zur Übersicht installiert.");
+    }
+  } catch (e) {}
+}
+function applyApp() {
+  const k = "rh-upd-" + pendingApp, last = +(LS.get(k) || 0);
+  if (Date.now() - last < 10 * 60e3) return;   // schon versucht: Server liefert noch die alte Fassung
+  LS.set(k, String(Date.now()));
+  const go = () => location.replace(location.pathname + "?v=" + encodeURIComponent(pendingApp));
+  try {
+    if (navigator.serviceWorker && navigator.serviceWorker.getRegistration) {
+      navigator.serviceWorker.getRegistration().then(r => r ? r.update().catch(() => {}) : 0).then(go, go);
+      setTimeout(go, 2500); return;
+    }
+  } catch (e) {}
+  go();
+}
+
+/* ---------- Einrichtung und Einstellungen ---------- */
+function openSetup(canCancel) { $("tok").value = ""; $("tokMsg").textContent = ""; $("tokCancel").hidden = !canCancel; show("setup"); setTimeout(() => $("tok").focus(), 50); }
+$("tokCancel").addEventListener("click", () => show("home"));
+$("tokSave").addEventListener("click", async () => {
+  const v = $("tok").value.trim(), m = $("tokMsg"); m.className = "msg";
+  if (!v) { m.textContent = "Bitte den Token einfügen."; m.className = "msg bad"; return; }
+  const old = TOKEN; TOKEN = v; $("tokSave").disabled = true; m.textContent = "Prüfe Zugriff …";
+  try {
+    await checkData(); LS.set("rh-token", v); await iput("meta", "token", v);
+    await loadGames(); show("home"); renderGrid(); toast("Zugriff eingerichtet");
+  } catch (e) {
+    TOKEN = old; m.className = "msg bad";
+    m.textContent = e.status === 401 ? "Token ungültig oder abgelaufen." : (e.status === 403 || e.status === 404) ? "Kein Zugriff auf RulesHelperData – Repository-Auswahl und „Contents: Read-only“ prüfen." : "Keine Verbindung zu GitHub. Bitte später erneut versuchen.";
+  } finally { $("tokSave").disabled = false; }
+});
+$("tok").addEventListener("keydown", e => { if (e.key === "Enter") $("tokSave").click(); });
+
+async function renderInfo() {
+  let size = "";
+  try { const est = await navigator.storage.estimate(); size = (est.usage / 1048576).toFixed(0) + " MB"; } catch (e) {}
+  const ready = games.filter(x => offlineReady(x.slug)).length;
+  $("info").innerHTML = `<dt>App</dt><dd>Version ${APP_VERSION}</dd>
+    <dt>Daten</dt><dd>${state.date ? fmtDate(state.date) + " · " + esc((state.commit || "").slice(0, 7)) : "–"}</dd>
+    <dt>Geprüft</dt><dd>${lastCheck ? new Date(lastCheck).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" }) + " Uhr" : online === false ? "offline" : "–"}</dd>
+    <dt>Offline</dt><dd>${ready} von ${games.length} Spielen${size ? " · " + size + " belegt" : ""}</dd>`;
+}
+$("gear").addEventListener("click", () => { show("settings"); renderInfo(); });
+$("setBack").addEventListener("click", () => { show("home"); renderGrid(); });
+$("chkNow").addEventListener("click", async () => {
+  const m = $("chkMsg"); m.className = "msg"; m.textContent = "Suche …";
+  await checkApp();
+  try { const ch = await checkData(); m.textContent = ch ? "Neue Daten geladen." : "Alles aktuell."; }
+  catch (e) { m.className = "msg bad"; m.textContent = authProblem || "Keine Verbindung zu GitHub."; }
+  renderInfo();
+});
+$("allOff").addEventListener("click", async () => {
+  const m = $("offMsg"), pr = $("prog"), bar = pr.firstElementChild; m.className = "msg";
+  try { await checkData(); } catch (e) {}
+  const todo = Object.keys(state.tree || {}).filter(p => !isLocal(p));
+  if (!todo.length) { m.textContent = "Alles ist schon offline verfügbar."; return; }
+  $("allOff").disabled = true; pr.hidden = false; bar.style.width = "0";
+  try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) {}
+  try {
+    await pool(todo, 4, getRec, (d, n) => { bar.style.width = (100 * d / n) + "%"; m.textContent = d + " von " + n + " Dateien"; });
+    const miss = todo.filter(p => !isLocal(p)).length;
+    m.textContent = miss ? miss + " Dateien fehlen noch (Verbindung?)." : "Fertig – alle Spiele sind offline verfügbar.";
+  } catch (e) { m.className = "msg bad"; m.textContent = authProblem || "Abgebrochen."; }
+  finally { $("allOff").disabled = false; saveState(); renderInfo(); gridKey = ""; }
+});
+$("tokChange").addEventListener("click", () => openSetup(true));
+$("clearCache").addEventListener("click", async () => {
+  for (const k of [...have]) await idel("blobs", k);
+  have.clear(); mem.clear(); state = { commit: null, date: null, tree: null, cached: {} };
+  await idel("meta", "state"); LS.set("rh-state", null); gridKey = "";
+  $("clrMsg").textContent = "Gelöscht. Lade die Übersicht neu …";
+  try { await checkData(); await loadGames(); $("clrMsg").textContent = "Gelöscht und Übersicht neu geladen."; } catch (e) { $("clrMsg").textContent = "Gelöscht. Ohne Verbindung ist die Übersicht leer."; games = []; }
+  renderInfo();
+});
+
+/* ---------- Start ---------- */
+let lastWake = 0;
+async function wake() {
+  if (Date.now() - lastWake < 60e3) return; lastWake = Date.now();
+  checkApp();
+  if (!TOKEN) return;
+  try { await checkData(); } catch (e) {}
+  renderStatus();
+}
+async function start() {
+  if (!TOKEN) { const t = await iget("meta", "token"); if (t) { TOKEN = t; LS.set("rh-token", t); } }
+  await loadState();
+  if (!TOKEN) { openSetup(false); checkApp(); return; }
+  show("home"); renderStatus();
+  if (state.tree) { try { await loadGames(); renderGrid(); } catch (e) {} }
+  lastWake = Date.now(); checkApp();
+  try { await checkData(); if (!games.length) await loadGames(); } catch (e) {}
+  renderGrid();
+  if (!games.length) $("status").textContent = authProblem ? "" : "Keine Verbindung zu GitHub und noch nichts auf dem Gerät gespeichert.";
+  const h = decodeURIComponent(location.hash.slice(1));
+  if (h && games.some(x => x.slug === h)) { try { history.replaceState(null, "", location.pathname); history.pushState({ g: h }, "", "#" + h); } catch (e) {} openGame(h, false); }
+  else if (location.search) { try { history.replaceState(null, "", location.pathname); } catch (e) {} }
+}
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") wake(); });
+window.addEventListener("online", () => { lastWake = 0; wake(); });
+setInterval(() => { lastWake = 0; wake(); }, 15 * 60e3);
+if ("serviceWorker" in navigator) { try { navigator.serviceWorker.register("sw.js").catch(() => {}); } catch (e) {} }
+start();
+</script>
+</body></html>
