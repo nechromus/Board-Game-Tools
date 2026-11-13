@@ -12,7 +12,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="icon-192.png">
 <link rel="manifest" href="manifest.webmanifest">
-<meta name="twow-build" content="3205cbb46e">
+<meta name="twow-build" content="8cccde37fe">
 
 <!--FONTS--><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;800;900&amp;family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&amp;family=Barlow+Semi+Condensed:ital,wght@0,500;0,600;0,700;1,500;1,600&amp;display=swap"><!--/FONTS-->
 <style>
@@ -1626,6 +1626,8 @@ svg.dcard[data-card]{-webkit-touch-callout:none;-webkit-user-select:none;user-se
 /* Rules rev 1721 §6: “Let the App pick” beside who opens */
 .firstbox .opener{margin:6px 0 0;display:inline-flex;min-height:34px;font-size:14px;padding:2px 12px}
 .fhbanner .opener{margin:0 0 0 10px;min-height:30px;padding:0 10px;font-size:13px;background:#fff;color:var(--ink);vertical-align:middle}
+/* the book in the digital fight sits on the dark table (.dfight sets light text): its pages keep the ink colour */
+.dfbookin{color:var(--ink)}
 
 </style>
 </head>
@@ -5553,7 +5555,7 @@ function fightStep(eng, ui, f) {
   // with the counter hidden, the rhythm line still says how the turns go and when the foe flees
   const rhythm = f.roundText || (f.rounds ? t('fight.rhythm.limit', { n: f.rounds, fled: t('fight.out.fled') })
     : t(f.group && f.participants > 1 ? 'fight.rhythm.group' : 'fight.rhythm.solo'));
-  body += `${ui.roundsHide ? `<div class="rhythm">${esc(rhythm)}</div>` : ''}${boxed && !ui.dpFight ? '' : (f.levelRules.no_strain ? `<p class="lvlnote">${esc(t('level.no_strain_slot', { level: t('level.name.' + f.levelId) }))}</p>` : xp('strainslot', esc(t('fight.strain_slot_short')), `<p>${esc(t('fight.strain_slot'))}</p>`, { cls: 'plain' })) + (f.poolNumber > 1 || !f.story || f.roundsDone ? '' : firstBox(eng, f))}`;
+  body += `${ui.roundsHide ? `<div class="rhythm">${esc(rhythm)}</div>` : ''}${boxed ? '' : (f.levelRules.no_strain ? `<p class="lvlnote">${esc(t('level.no_strain_slot', { level: t('level.name.' + f.levelId) }))}</p>` : xp('strainslot', esc(t('fight.strain_slot_short')), `<p>${esc(t('fight.strain_slot'))}</p>`, { cls: 'plain' })) + (f.poolNumber > 1 || !f.story || f.roundsDone ? '' : firstBox(eng, f))}`;
   let ends;
   const outBtn = (k, mark = '') => { const known = OUTCOMES.includes(k); return `<button class="btn line${mark}" data-act="outcome" data-k="${k}">${esc(known ? t('fight.out.' + k) : k.replace(/_/g, ' '))}${known ? `<small>${esc(t('fight.out.' + k + '.why'))}</small>` : ''}</button>`; };
   const inBox = boxed && !ui.dpFight;
