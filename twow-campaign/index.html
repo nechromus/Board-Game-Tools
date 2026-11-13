@@ -12,7 +12,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="icon-192.png">
 <link rel="manifest" href="manifest.webmanifest">
-<meta name="twow-build" content="f65eef2dd9">
+<meta name="twow-build" content="032706d778">
 
 <!--FONTS--><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;800;900&amp;family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&amp;family=Barlow+Semi+Condensed:ital,wght@0,500;0,600;0,700;1,500;1,600&amp;display=swap"><!--/FONTS-->
 <style>
@@ -8135,7 +8135,7 @@ function cardSVG(c, opts = {}) {
   const col = COLS.includes(c.colour) ? c.colour : 'grey', dark = DARK[col], name = String(c.name || '');
   const cost = c.cost === 'trash' ? '✕' : (c.cost ?? 0);
   // name band: up to two lines, never cut
-  let nfs = 8.6, nl = wrapText(name, nfs, 62); if (nl.length > 2) { nfs = 7; nl = wrapText(name, nfs, 64).slice(0, 2); }
+  let nfs = 8.6, nl = wrapText(name, nfs, 62 * 0.5 / 0.62); if (nl.length > 2) { nfs = 7; nl = wrapText(name, nfs, 64 * 0.5 / 0.62).slice(0, 2); }
   const bh = nl.length > 1 ? 22 : 17;
   const fit = fitText(cardLines(c, !!opts.full), 80, opts.full ? 78 : 68, !!opts.full), lines = fit.w;
   const boxH = lines.length ? lines.length * fit.fs * 1.1 + 4 : 0, boxTop = H - 6 - boxH, top0 = bh + 2;
@@ -8150,7 +8150,9 @@ function cardSVG(c, opts = {}) {
   const tabs = (c.extensions || []).map(e => {
     const slot = (L.tab_slots || []).find(x => x.colour === e.colour); if (!slot) return '';
     const k = seen[e.colour] = (seen[e.colour] || 0) + 1, y0 = top0 + slot.top / 0.74 * sh, y1 = top0 + slot.bottom / 0.74 * sh, x0 = sw - 1 + (k - 1) * (tabR - sw);
-    return `<path d="M${x0} ${y0.toFixed(1)}h${tabR - sw}l3 ${((y1 - y0) / 2).toFixed(1)}-3 ${((y1 - y0) / 2).toFixed(1)}h-${tabR - sw}z" fill="${TAB[e.colour] || '#777'}" stroke="#1E160E" stroke-width=".6"/>`;
+    // the bonus on the flag itself, as on the printed card (user 2026-11-13: “the cards miss the effects in the connecting flags”)
+    const bonus = e.damage ? `+${e.damage}` : e.shield ? `+${e.shield}⛉` : (e.effects || []).length ? (typeof e.effects[0] === 'string' ? (EFX[e.effects[0]] || '•') : '✎') : '';
+    return `<path d="M${x0} ${y0.toFixed(1)}h${tabR - sw}l3 ${((y1 - y0) / 2).toFixed(1)}-3 ${((y1 - y0) / 2).toFixed(1)}h-${tabR - sw}z" fill="${TAB[e.colour] || '#777'}" stroke="#1E160E" stroke-width=".6"/>${bonus ? `<text x="${x0 + (tabR - sw) / 2 + 1}" y="${((y0 + y1) / 2 + 2.8).toFixed(1)}" font-size="${Math.min(8, Math.max(6, (y1 - y0) * 0.55)).toFixed(1)}" font-weight="800" text-anchor="middle" fill="#1E160E">${esc(bonus)}</text>` : ''}`;
   }).join('');
   const ey = Math.min(56, (top0 + 10 + boxTop - 14) / 2), er = Math.max(12, Math.min(20, (boxTop - 14 - top0 - 10) / 2));
   const full = `<g class="cfu">
@@ -8170,7 +8172,8 @@ ${terrDisc(c, 13, (lines.length ? boxTop : H - 6) - 7)}</g>`;
 ${c.damage ? `<path d="M18 6v14M12 18h12" stroke="#F4EAD3" stroke-width="3"/><text x="18" y="40" font-size="26" font-weight="900" text-anchor="middle" fill="#F4EAD3" font-family="Georgia,serif">${c.damage}</text>` : ''}
 ${c.shield ? `<g transform="translate(0 ${c.damage ? 42 : 0})"><path d="M18 6l10 3v8c0 7-5 10-10 12c-5-2-10-5-10-12v-8z" fill="#F4EAD3"/><text x="18" y="54" font-size="22" font-weight="900" text-anchor="middle" fill="#F4EAD3" font-family="Georgia,serif">${c.shield}</text></g>` : ''}
 ${!c.damage && !c.shield && (c.effects || []).length ? `<text x="18" y="32" font-size="18" font-weight="900" text-anchor="middle" fill="#F4EAD3">${esc(typeof c.effects[0] === 'string' ? (EFX[c.effects[0]] || '•') : '✎')}</text>` : ''}
-${(c.extensions || []).map((e, i) => `<rect x="39" y="${8 + i * 22}" width="18" height="18" rx="2" fill="${TAB[e.colour] || '#777'}" stroke="#1E160E" stroke-width=".6"/>`).join('')}
+${(c.extensions || []).map((e, i) => { const b = e.damage ? `+${e.damage}` : e.shield ? `+${e.shield}⛉` : (e.effects || []).length ? (typeof e.effects[0] === 'string' ? (EFX[e.effects[0]] || '•') : '✎') : '';
+  return `<rect x="39" y="${8 + i * 22}" width="22" height="18" rx="2" fill="${TAB[e.colour] || '#777'}" stroke="#1E160E" stroke-width=".6"/>${b ? `<text x="50" y="${21 + i * 22}" font-size="11" font-weight="900" text-anchor="middle" fill="#1E160E">${esc(b)}</text>` : ''}`; }).join('')}
 <rect x="76" y="${H - 50}" width="18" height="18" rx="9" fill="#E2B84A" stroke="#4A3418"/><text x="85" y="${H - 36}" font-size="13" font-weight="900" text-anchor="middle" fill="#2B1E10" font-family="Georgia,serif">${esc(cost)}</text>
 ${terrDisc(c, 66, H - 41)}<text x="${W / 2}" y="${H - 9}" font-size="11.5" font-weight="700" text-anchor="middle" fill="#2B211B" font-family="Georgia,serif">${esc(name.length > 12 ? name.slice(0, 11) + '…' : name)}</text></g>`;
   const ring = opts.sel ? `<rect x="1.5" y="1.5" width="${W - 3}" height="${H - 3}" rx="5" fill="none" stroke="#E2B84A" stroke-width="3"/>` : '';
