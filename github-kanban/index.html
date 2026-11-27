@@ -839,11 +839,13 @@ const ghdb={collection(name){return{
 }}};
 
 function openKey(msg){
-  $("#sheetHost").innerHTML=`<div class="sheet-bg" id="bg"><form class="sheet" id="kf" role="dialog" aria-label="GitHub key"><h3>Connect to GitHub</h3>
+  $("#sheetHost").innerHTML=`<div class="sheet-bg" id="bg"><form class="sheet" id="kf" role="dialog" aria-label="GitHub key" method="post" action="#"><h3>Connect to GitHub</h3>
     ${msg?`<div class="note" style="color:var(--p1)">${esc(msg)}</div>`:""}
     <p>This board reads and writes the issues of <b>nechromus/twow-campaign-app</b>. It needs a GitHub key, stored only in this browser.</p>
     <ol class="note"><li>On github.com: Settings → Developer settings → Personal access tokens → <b>Fine-grained tokens</b> → Generate new token.</li><li>Repository access: <b>Only select repositories</b> → twow-campaign-app.</li><li>Repository permissions: <b>Issues: Read and write</b> (Metadata: read is added automatically).</li><li>Copy the token and paste it here.</li></ol>
-    <div class="field"><label for="k-tok">GitHub key</label><input id="k-tok" type="password" autocomplete="off" placeholder="github_pat_…" value="${esc(ghToken||"")}"></div>
+    <input type="text" name="username" autocomplete="username" value="twow-github-kanban" readonly hidden>
+    <div class="field"><label for="k-tok">GitHub key</label><input id="k-tok" name="password" type="password" autocomplete="current-password" placeholder="github_pat_…" value="${esc(ghToken||"")}"></div>
+    <div class="note">Tip: let your browser's password manager save the key when it offers to. With password sync (iCloud Keychain, Google, Microsoft, 1Password …) your other devices fill it in with one tap, and this browser remembers it anyway.</div>
     <div class="bar"><button class="btn primary" type="submit">Save and load</button>${ghToken?`<button class="btn" type="button" id="kreload">Reload data</button><button class="btn danger" type="button" id="kforget">Forget key</button>`:""}<button class="btn" type="button" id="close">Close</button></div></form></div>`;
   $("#close").onclick=closeSheet;
   const rl=$("#kreload");if(rl)rl.onclick=()=>{closeSheet();connect()};
